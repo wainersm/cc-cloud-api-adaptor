@@ -2,6 +2,7 @@ module github.com/confidential-containers/cloud-api-adaptor
 
 go 1.16
 
+
 require (
 	github.com/IBM/go-sdk-core/v5 v5.6.3
 	github.com/IBM/vpc-go-sdk v1.0.1
