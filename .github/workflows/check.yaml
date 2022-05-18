@@ -1,0 +1,22 @@
+# Run static checks.
+---
+name: check
+on: [pull_request]
+env:
+  GO_VERSION: '1.16'
+jobs:
+  go_check:
+    matrix:
+      checker:
+        - fmt
+        - vet
+    strategy:
+      fail-fast: false
+    name: go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - run: make CLOUD_PROVIDER=libvirt ${{ matrix.checker }}
