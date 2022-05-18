@@ -4,6 +4,7 @@ This repository contains the implementation of Kata [remote hypervisor](https://
 The remote hypervisor concept is currently work in progress. The primary purpose of remote hypervisor support is to create
 Kata VMs alongside the Kubernetes worker node VMs, without requiring any nested virtualization support.
 
+
 ## Goals
 
 * Accept requests from Kata shim to create/delete Kata VM instances without requiring nested virtualization support.
