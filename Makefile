@@ -30,7 +30,7 @@ test:
 check: fmt vet
 
 fmt:
-	find $(SOURCEDIRS) -name '*.go' -print0 | xargs -0 gofmt -l -d
+	./scripts/run_gofmt.sh $(SOURCEDIRS)
 
 vet:
 	go vet $(PACKAGES)

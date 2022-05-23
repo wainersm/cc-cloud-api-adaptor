@@ -185,7 +185,7 @@ func (s *hypervisorService) StartVM(ctx context.Context, req *pb.StartVMRequest)
 
 	result, err := CreateInstance(context.TODO(), s.ec2Client, input)
 	if err != nil {
-		logger.Printf("failed to create an instance : %v and the response is %s", err, result)
+		logger.Printf("failed to create an instance : %v and the response is %v", err, result)
 		return nil, err
 	}
 
@@ -206,7 +206,7 @@ func (s *hypervisorService) StartVM(ctx context.Context, req *pb.StartVMRequest)
 
 	_, err = MakeTags(context.TODO(), s.ec2Client, tagInput)
 	if err != nil {
-		logger.Printf("failed to tag the instance", err)
+		logger.Printf("failed to tag the instance: %v", err)
 	}
 
 	podNodeIPs, err := getIPs(result.Instances[0])
