@@ -21,6 +21,7 @@ import (
 	"github.com/IBM/vpc-go-sdk/vpcv1"
 
 	"github.com/confidential-containers/cloud-api-adaptor/pkg/adaptor/forwarder"
+	"github.com/confidential-containers/cloud-api-adaptor/pkg/adaptor/hypervisor"
 	daemon "github.com/confidential-containers/cloud-api-adaptor/pkg/forwarder"
 	"github.com/confidential-containers/cloud-api-adaptor/pkg/podnetwork/tunneler"
 	"github.com/confidential-containers/cloud-api-adaptor/pkg/util/http/upgrader"
@@ -86,7 +87,7 @@ func TestCreateStartAndStop(t *testing.T) {
 	}
 }
 
-func testServerStart(t *testing.T, ctx context.Context) (Server, string, string, pb.HypervisorService, chan error) {
+func testServerStart(t *testing.T, ctx context.Context) (hypervisor.Server, string, string, pb.HypervisorService, chan error) {
 	dir, err := ioutil.TempDir("", "helper")
 	if err != nil {
 		t.Fatal(err)
@@ -156,7 +157,7 @@ func startAgentServer(t *testing.T) string {
 	return port
 }
 
-func newServer(t *testing.T, socketPath, podsDir string) Server {
+func newServer(t *testing.T, socketPath, podsDir string) hypervisor.Server {
 	switch strings.ToLower(os.Getenv("USE_IBM_CLOUD")) {
 	case "", "no", "false", "0":
 		port := startAgentServer(t)
@@ -190,7 +191,7 @@ func newServer(t *testing.T, socketPath, podsDir string) Server {
 	return NewServer(socketPath, vpcv1, serviceConfig, &mockWorkerNode{}, podsDir, daemon.DefaultListenPort)
 }
 
-func testServerShutdown(t *testing.T, s Server, socketPath, dir string, serverErrCh chan error) {
+func testServerShutdown(t *testing.T, s hypervisor.Server, socketPath, dir string, serverErrCh chan error) {
 
 	if err := s.Shutdown(); err != nil {
 		t.Error(err)
