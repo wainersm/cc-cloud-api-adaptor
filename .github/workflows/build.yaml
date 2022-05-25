@@ -1,4 +1,7 @@
-# Check it can build the project for each cloud provider.
+# (C) Copyright Red Hat 2022.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Build the project for each cloud provider.
 ---
 name: build
 on: [pull_request]
@@ -12,6 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         provider:
+          # Please keep this list in alphabetical order.
           - aws
           - ibmcloud
           - libvirt
@@ -19,10 +23,13 @@ jobs:
       - name: Checkout the pull request code
         uses: actions/checkout@v3
         with:
+          # Need this to clone the repository side-by-side with kata's.
           path: cloud-api-adaptor
       - name: Checkout the Kata Containers fork
         uses: actions/checkout@v3
         with:
+          # TODO: this repository is temporary and so should be replaced
+          # once the required changes are merged on kata's repo.
           repository: yoheiueda/kata-containers
           ref: CCv0-peerpod
           path: kata-containers
