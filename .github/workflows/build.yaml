@@ -23,7 +23,7 @@ jobs:
       - name: Checkout the Kata Containers fork
         uses: actions/checkout@v3
         with:
-          repository: github.com/yoheiueda/kata-containers
+          repository: yoheiueda/kata-containers
           ref: CCv0-peerpod
           path: kata-containers
       - name: Setup Golang version ${{ env.GO_VERSION }}
