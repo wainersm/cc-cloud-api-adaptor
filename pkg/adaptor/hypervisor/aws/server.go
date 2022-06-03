@@ -8,15 +8,14 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/confidential-containers/cloud-api-adaptor/pkg/podnetwork"
 	"github.com/confidential-containers/cloud-api-adaptor/pkg/adaptor/hypervisor"
+	"github.com/confidential-containers/cloud-api-adaptor/pkg/podnetwork"
 	"github.com/containerd/ttrpc"
 
 	pb "github.com/kata-containers/kata-containers/src/runtime/protocols/hypervisor"
 )
 
 var logger = log.New(log.Writer(), "[helper/hypervisor] ", log.LstdFlags|log.Lmsgprefix)
-
 
 type server struct {
 	socketPath string
@@ -33,14 +32,14 @@ type server struct {
 
 func NewServer(cfg hypervisor.Config, cloudCfg Config, workerNode podnetwork.WorkerNode, daemonPort string) hypervisor.Server {
 
-     logger.Printf("hypervisor config %v", cfg)
-     logger.Printf("cloud config %v", cloudCfg)
-     ec2Client, err := NewEC2Client(cloudCfg)
-     if err != nil {
-          return nil
-     }
+	logger.Printf("hypervisor config %v", cfg)
+	logger.Printf("cloud config %v", cloudCfg)
+	ec2Client, err := NewEC2Client(cloudCfg)
+	if err != nil {
+		return nil
+	}
 
-    return &server{
+	return &server{
 		socketPath: cfg.SocketPath,
 		service:    newService(ec2Client, &cloudCfg, workerNode, cfg.PodsDir, daemonPort),
 		workerNode: workerNode,
@@ -49,14 +48,14 @@ func NewServer(cfg hypervisor.Config, cloudCfg Config, workerNode podnetwork.Wor
 	}
 }
 
-func (s *server) Start(ctx context.Context) error {
+func (s *server) Start(ctx context.Context) (err error) {
 
 	ttRpc, err := ttrpc.NewServer()
 	if err != nil {
 		return err
 	}
 	s.ttRpc = ttRpc
-	if err := os.MkdirAll(filepath.Dir(s.socketPath), os.ModePerm); err != nil {
+	if err = os.MkdirAll(filepath.Dir(s.socketPath), os.ModePerm); err != nil {
 		return err
 	}
 	pb.RegisterHypervisorService(s.ttRpc, s.service)
@@ -68,17 +67,22 @@ func (s *server) Start(ctx context.Context) error {
 	ttRpcErr := make(chan error)
 	go func() {
 		defer close(ttRpcErr)
-		if err := s.ttRpc.Serve(ctx, listener); err != nil {
+		if err = s.ttRpc.Serve(ctx, listener); err != nil {
 			ttRpcErr <- err
 		}
 	}()
-	defer s.ttRpc.Shutdown(context.Background())
+	defer func() {
+		newErr := s.ttRpc.Shutdown(context.Background())
+		if newErr != nil && err == nil {
+			err = newErr
+		}
+	}()
 
 	close(s.readyCh)
 
 	select {
 	case <-ctx.Done():
-		s.Shutdown()
+		err = s.Shutdown()
 	case <-s.stopCh:
 	case err = <-ttRpcErr:
 	}

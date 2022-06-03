@@ -14,8 +14,21 @@ locals {
   bastion_ip = resource.ibm_is_floating_ip.worker.address
 }
 
-data "ibm_is_ssh_key" "ssh_key" {
+resource "ibm_is_ssh_key" "created_ssh_key" {
+  # Create the ssh key only if the public key is set
+  count = var.ssh_pub_key == "" ? 0 : 1
   name = var.ssh_key_name
+  public_key = var.ssh_pub_key
+}
+
+data "ibm_is_ssh_key" "ssh_key" {
+  # Wait if the key needs creating first
+  depends_on = [ibm_is_ssh_key.created_ssh_key]
+  name = var.ssh_key_name
+}
+
+output "ssh_key_name" {
+  value = var.ssh_key_name
 }
 
 data "ibm_is_image" "k8s_node" {
@@ -90,7 +103,7 @@ resource "null_resource" "ansible" {
   }
   provisioner "local-exec" {
     working_dir = "./ansible"
-    command = "ansible-playbook -i inventory -u root ./playbook.yml"
+    command = "ansible-playbook -i inventory -u root ./kube-playbook.yml && ansible-playbook -i inventory -u root ./kata-playbook.yml"
   }
   provisioner "local-exec" {
     command = "./scripts/setup.sh --bastion ${local.bastion_ip} --control-plane ${local.controlplane_ip} --workers ${local.worker_ip}"

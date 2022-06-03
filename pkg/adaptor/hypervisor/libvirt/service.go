@@ -25,9 +25,8 @@ import (
 	pb "github.com/kata-containers/kata-containers/src/runtime/protocols/hypervisor"
 )
 
-
 const (
-	Version       = "0.0.0"
+	Version = "0.0.0"
 )
 
 type hypervisorService struct {
@@ -100,7 +99,7 @@ func (s *hypervisorService) CreateVM(ctx context.Context, req *pb.CreateVMReques
 		return nil, fmt.Errorf("pod name %s is missing in annotations", annotations.SandboxName)
 	}
 	namespace := req.Annotations[annotations.SandboxNamespace]
-	if pod == "" {
+	if namespace == "" {
 		return nil, fmt.Errorf("namespace name %s is missing in annotations", annotations.SandboxNamespace)
 	}
 
@@ -151,7 +150,7 @@ func (s *hypervisorService) StartVM(ctx context.Context, req *pb.StartVMRequest)
 	}
 
 	// Store daemon.json in worker node for debuggig
-	if err := os.WriteFile(filepath.Join(sandbox.podDirPath, "daemon.json"), daemonJSON, 0666); err != nil {
+	if err = os.WriteFile(filepath.Join(sandbox.podDirPath, "daemon.json"), daemonJSON, 0666); err != nil {
 		return nil, fmt.Errorf("failed to store daemon.json at %s: %w", sandbox.podDirPath, err)
 	}
 	logger.Printf("store daemon.json at %s", sandbox.podDirPath)
@@ -238,8 +237,6 @@ func (s *hypervisorService) getSandbox(id string) (*sandbox, error) {
 	}
 	return s.sandboxes[sid], nil
 }
-
-var errNotReady = errors.New("address not ready")
 
 func getIPs(instance *vmConfig) ([]net.IP, error) {
 

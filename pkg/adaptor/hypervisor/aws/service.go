@@ -27,9 +27,8 @@ import (
 	pb "github.com/kata-containers/kata-containers/src/runtime/protocols/hypervisor"
 )
 
-
 const (
-	Version       = "0.0.0"
+	Version               = "0.0.0"
 	EC2LaunchTemplateName = "kata"
 )
 
@@ -103,7 +102,7 @@ func (s *hypervisorService) CreateVM(ctx context.Context, req *pb.CreateVMReques
 		return nil, fmt.Errorf("pod name %s is missing in annotations", annotations.SandboxName)
 	}
 	namespace := req.Annotations[annotations.SandboxNamespace]
-	if pod == "" {
+	if namespace == "" {
 		return nil, fmt.Errorf("namespace name %s is missing in annotations", annotations.SandboxNamespace)
 	}
 
@@ -142,7 +141,6 @@ func (s *hypervisorService) StartVM(ctx context.Context, req *pb.StartVMRequest)
 		return nil, err
 	}
 
-
 	daemonConfig := daemon.Config{
 		PodNamespace: sandbox.namespace,
 		PodName:      sandbox.pod,
@@ -154,7 +152,7 @@ func (s *hypervisorService) StartVM(ctx context.Context, req *pb.StartVMRequest)
 	}
 
 	// Store daemon.json in worker node for debuggig
-	if err := os.WriteFile(filepath.Join(sandbox.podDirPath, "daemon.json"), daemonJSON, 0666); err != nil {
+	if err = os.WriteFile(filepath.Join(sandbox.podDirPath, "daemon.json"), daemonJSON, 0666); err != nil {
 		return nil, fmt.Errorf("failed to store daemon.json at %s: %w", sandbox.podDirPath, err)
 	}
 	logger.Printf("store daemon.json at %s", sandbox.podDirPath)
@@ -187,8 +185,7 @@ func (s *hypervisorService) StartVM(ctx context.Context, req *pb.StartVMRequest)
 
 	result, err := CreateInstance(context.TODO(), s.ec2Client, input)
 	if err != nil {
-		logger.Printf("failed to create an instance : %v and the response is %s", err, result)
-		return nil, err
+		return nil, fmt.Errorf("Creating instance (%v) returned error: %s", result, err)
 	}
 
 	sandbox.vsi = *result.Instances[0].InstanceId
@@ -196,7 +193,7 @@ func (s *hypervisorService) StartVM(ctx context.Context, req *pb.StartVMRequest)
 	logger.Printf("created an instance %s for sandbox %s", *result.Instances[0].PublicDnsName, req.Id)
 
 	vmName := fmt.Sprintf("%s-%s-%s-%.8s", s.nodeName, sandbox.namespace, sandbox.pod, sandbox.id)
-        tagInput := &ec2.CreateTagsInput{
+	tagInput := &ec2.CreateTagsInput{
 		Resources: []string{*result.Instances[0].InstanceId},
 		Tags: []types.Tag{
 			{
@@ -206,10 +203,10 @@ func (s *hypervisorService) StartVM(ctx context.Context, req *pb.StartVMRequest)
 		},
 	}
 
-        _, err = MakeTags(context.TODO(), s.ec2Client, tagInput)
-        if err != nil {
-                logger.Printf("failed to tag the instance", err)
-        }
+	_, err = MakeTags(context.TODO(), s.ec2Client, tagInput)
+	if err != nil {
+		logger.Printf("Adding tags to the instance failed with error: %s", err)
+	}
 
 	podNodeIPs, err := getIPs(result.Instances[0])
 	if err != nil {
@@ -280,7 +277,7 @@ func getIPs(instance types.Instance) ([]net.IP, error) {
 		}
 
 		ip := net.ParseIP(*addr)
-		if addr == nil {
+		if ip == nil {
 			return nil, fmt.Errorf("failed to parse pod node IP %q", *addr)
 		}
 		podNodeIPs = append(podNodeIPs, ip)
