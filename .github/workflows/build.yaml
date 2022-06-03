@@ -51,6 +51,6 @@ jobs:
       - name: Test
         # TODO: the tests for ibmcloud don't compile. Remove below guard when
         # they get fixed (see https://github.com/confidential-containers/cloud-api-adaptor/issues/48).
-        if: ${{ matrix.provider != ibmcloud }}
+        if: ${{ matrix.provider != 'ibmcloud' }}
         run: |
           make CLOUD_PROVIDER=${{ matrix.provider }} test
