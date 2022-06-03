@@ -1,7 +1,7 @@
 # (C) Copyright Red Hat 2022.
 # SPDX-License-Identifier: Apache-2.0
 #
-# Build the project for each cloud provider.
+# Build and run unit tests the project for each cloud provider.
 ---
 name: build
 on: [pull_request]
@@ -48,3 +48,10 @@ jobs:
         run: |
           cd cloud-api-adaptor
           make CLOUD_PROVIDER=${{ matrix.provider }} build
+      - name: Test
+        # TODO: the tests for ibmcloud don't compile. Remove below guard when
+        # they get fixed (see https://github.com/confidential-containers/cloud-api-adaptor/issues/48).
+        if: ${{ matrix.provider != 'ibmcloud' }}
+        run: |
+          cd cloud-api-adaptor
+          make CLOUD_PROVIDER=${{ matrix.provider }} test
