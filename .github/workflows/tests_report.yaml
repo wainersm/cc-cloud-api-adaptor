@@ -1,0 +1,35 @@
+# (C) Copyright Red Hat 2022.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Publish the results of tests.
+---
+name: Test Report
+on:
+  workflow_run:
+    workflows: ['build']
+    types:
+      - completed
+jobs:
+  unittest_report_job:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        provider:
+          # Please keep this list in alphabetical order.
+          - aws
+          - ibmcloud
+          - libvirt
+        runner:
+          - ubuntu-latest
+        go_version:
+          - 1.16
+    steps:
+      - name: Publish JUnit report
+        uses: dorny/test-reporter@v1
+        with:
+          name: unittest-${{ matrix.provider }}
+          artifact: tests_report_junit-${{ matrix.provider }}_${{ matrix.runner }}_${{ matrix.go_version }}
+          reporter: java-junit
+          path: tests_report_junit.xml
