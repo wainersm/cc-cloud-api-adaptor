@@ -61,6 +61,6 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: tests_report_junit-${{ matrix.provider }}--${{ matrix.runner }}-${{ matrix.go_version }}
+          name: tests_report_junit-${{ matrix.provider }}_${{ matrix.runner }}_${{ matrix.go_version }}
           path: ${{ github.workspace }}/cloud-api-adaptor/tests_report_junit.xml
           retention-days: 1
