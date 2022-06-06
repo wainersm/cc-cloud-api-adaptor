@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-//SkipTestIfNotRoot skips the test if not running as root user.
+// SkipTestIfNotRoot skips the test if not running as root user.
 func SkipTestIfNotRoot(t *testing.T) {
 	if os.Geteuid() != 0 {
 		t.Skip("This test requires root privileges. Skipping.")
