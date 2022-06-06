@@ -29,6 +29,7 @@ jobs:
       - name: Publish JUnit report
         uses: dorny/test-reporter@v1
         with:
+          name: unittest-${{ matrix.provider }}
           artifact: tests_report_junit-${{ matrix.provider }}_${{ matrix.runner }}_${{ matrix.go_version }}
           reporter: java-junit
           path: tests_report_junit.xml
