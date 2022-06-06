@@ -65,8 +65,3 @@ jobs:
           name: tests_report_junit-${{ matrix.provider }}_${{ matrix.runner }}_${{ matrix.go_version }}
           path: ${{ github.workspace }}/cloud-api-adaptor/tests_report_junit.xml
           retention-days: 1
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
-        if: always() # always run even if the previous step fails
-        with:
-          report_paths: ${{ github.workspace }}/cloud-api-adaptor/tests_report_junit.xml
