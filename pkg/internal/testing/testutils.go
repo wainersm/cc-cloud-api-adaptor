@@ -5,6 +5,7 @@
 package testutils
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -13,5 +14,15 @@ import (
 func SkipTestIfNotRoot(t *testing.T) {
 	if os.Geteuid() != 0 {
 		t.Skip("This test requires root privileges. Skipping.")
+	}
+}
+
+// SkipTestIfRunningInCI skips the test if running in CI environment.
+func SkipTestIfRunningInCI(t *testing.T) {
+	value, exported := os.LookupEnv("CI")
+	fmt.Println(value)
+	fmt.Println(exported)
+	if exported && value == "true" {
+		t.Skip("This test is disabled on CI. Skipping.")
 	}
 }
