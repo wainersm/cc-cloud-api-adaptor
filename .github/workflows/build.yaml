@@ -10,7 +10,7 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     env:
-      - CI: true
+      CI: true
     strategy:
       fail-fast: false
       matrix:
