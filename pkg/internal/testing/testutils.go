@@ -21,6 +21,7 @@ func SkipTestIfNotRoot(t *testing.T) {
 func SkipTestIfRunningInCI(t *testing.T) {
 	value, exported := os.LookupEnv("CI")
 	fmt.Println(value)
+	fmt.Println(exported)
 	if exported && value == "true" {
 		t.Skip("This test is disabled on CI. Skipping.")
 	}
