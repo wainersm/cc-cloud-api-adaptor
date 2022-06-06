@@ -8,7 +8,7 @@
 # privilege only granted when the workflow run in the main branch (see
 # https://github.com/dorny/test-reporter for further details).
 ---
-name: Test Report
+name: Tests Report
 on:
   workflow_run:
     workflows: ['build']
@@ -34,7 +34,7 @@ jobs:
       - name: Publish JUnit report
         uses: dorny/test-reporter@v1
         with:
-          name: unittest-results-${{ matrix.provider }}_${{ matrix.runner }}_${{ matrix.go_version }}
+          name: unit tests report (${{ matrix.provider }},${{ matrix.runner }},${{ matrix.go_version }})
           artifact: tests_report_junit-${{ matrix.provider }}_${{ matrix.runner }}_${{ matrix.go_version }}
           reporter: java-junit
           path: tests_report_junit.xml
