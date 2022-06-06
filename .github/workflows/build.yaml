@@ -9,6 +9,8 @@ jobs:
   build_job:
     name: build
     runs-on: ubuntu-latest
+    env:
+      CI: true
     strategy:
       fail-fast: false
       matrix:
