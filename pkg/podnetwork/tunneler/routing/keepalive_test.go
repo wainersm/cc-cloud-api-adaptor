@@ -15,6 +15,7 @@ import (
 )
 
 func TestKeepAlive(t *testing.T) {
+	// TODO: enable this test once https://github.com/confidential-containers/cloud-api-adaptor/issues/52 is fixed
 	testutils.SkipTestIfRunningInCI(t)
 	testutils.SkipTestIfNotRoot(t)
 
