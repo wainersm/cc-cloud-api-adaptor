@@ -52,7 +52,6 @@ func TestNewForwarder(t *testing.T) {
 	select {
 	case <-f.stopCh:
 		t.Fatal("channel is closed")
-	default:
 	}
 }
 
