@@ -145,10 +145,8 @@ func startAgentServer(t *testing.T) string {
 	ctx := context.Background()
 
 	go func() {
-		if ttrpcServer.Serve(ctx, handler); err != nil {
-			if err != nil {
-				t.Error(err)
-			}
+		if err := ttrpcServer.Serve(ctx, handler); err != nil {
+			t.Error(err)
 		}
 	}()
 	t.Cleanup(func() {
