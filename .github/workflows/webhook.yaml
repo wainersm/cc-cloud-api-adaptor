@@ -1,0 +1,24 @@
+# (C) Copyright Red Hat 2022.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Run end-to-end tests.
+---
+name: webhook
+on: [pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the pull request code
+        uses: actions/checkout@v3
+      - name: Setup Golang version 1.18
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - name: Install kind
+        run: |
+          go install sigs.k8s.io/kind@v0.16.0
+      - name: Create the cluster
+        run: |
+          cd webhook
+          make kind-cluster
