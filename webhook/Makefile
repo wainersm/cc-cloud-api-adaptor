@@ -111,6 +111,14 @@ kind-cluster-with-registry: ## create a kind cluster for testing with a local re
 	@echo Connect the registry in the cluster network
 	docker network connect "kind" "${KIND_REG_NAME}"
 
+.PHONY: kind-cluster-delete
+kind-cluster-delete: ## delete the kind test cluster
+ifneq (,$(shell docker ps -q -f name=$(KIND_REG_NAME)))
+	docker stop ${KIND_REG_NAME} || true
+	docker rm ${KIND_REG_NAME} || true
+endif
+	kind delete cluster --name="${KIND_CLUSTER_NAME}"
+
 .PHONY: kind-load
 kind-load: ## load the image in the local kind cluster
 	 kind load docker-image ${IMG} --name $(KIND_CLUSTER_NAME)
