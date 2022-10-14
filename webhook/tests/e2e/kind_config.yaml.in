@@ -1,0 +1,12 @@
+# Copyright Confidential Containers Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Contains configurations to k8s Kind.
+---
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${KIND_REG_PORT}"]
+    endpoint = ["http://${KIND_REG_NAME}:5000"]

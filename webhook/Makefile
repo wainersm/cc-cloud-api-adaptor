@@ -11,6 +11,10 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+KIND_CLUSTER_NAME ?= webhook
+export KIND_REG_NAME ?= kind-registry
+export KIND_REG_PORT ?= 5001
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -94,12 +98,22 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: kind-cluster
 kind-cluster: ## create a kind cluster for testing 
-	kind create cluster --name webhook 
+	kind create cluster --name $(KIND_CLUSTER_NAME)
 	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
+
+kind-cluster-with-registry: ## create a kind cluster for testing with a local registry
+	@echo Start a registry at localhost:${KIND_REG_PORT}
+	docker run -d --restart=always -p "127.0.0.1:${KIND_REG_PORT}:5000" \
+		--name "${KIND_REG_NAME}" registry:2
+	envsubst '$${KIND_REG_PORT},$${KIND_REG_NAME}'< tests/e2e/kind_config.yaml.in | \
+		kind create cluster --name $(KIND_CLUSTER_NAME) --config=-
+	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
+	@echo Connect the registry in the cluster network
+	docker network connect "kind" "${KIND_REG_NAME}"
 
 .PHONY: kind-load
 kind-load: ## load the image in the local kind cluster
-	 kind load docker-image ${IMG} --name webhook
+	 kind load docker-image ${IMG} --name $(KIND_CLUSTER_NAME)
 
 .PHONY: kind-deploy
 kind-deploy: docker-build kind-load deploy ## deploy the webhook in the local kind cluster
