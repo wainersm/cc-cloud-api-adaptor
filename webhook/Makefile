@@ -98,7 +98,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: kind-cluster
 kind-cluster: ## create a kind cluster for testing 
-	kind create cluster --name $(KIND_CLUSTER_NAME)
+	kind create cluster --wait 120s --name $(KIND_CLUSTER_NAME)
 	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
 
 kind-cluster-with-registry: ## create a kind cluster for testing with a local registry
@@ -106,7 +106,7 @@ kind-cluster-with-registry: ## create a kind cluster for testing with a local re
 	docker run -d --restart=always -p "127.0.0.1:${KIND_REG_PORT}:5000" \
 		--name "${KIND_REG_NAME}" registry:2
 	envsubst '$${KIND_REG_PORT},$${KIND_REG_NAME}'< tests/e2e/kind_config.yaml.in | \
-		kind create cluster --name $(KIND_CLUSTER_NAME) --config=-
+		kind create cluster --wait 120s --name $(KIND_CLUSTER_NAME) --config=-
 	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
 	@echo Connect the registry in the cluster network
 	docker network connect "kind" "${KIND_REG_NAME}"
