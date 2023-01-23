@@ -55,7 +55,7 @@ variable "qemu_binary" {
 
 variable "machine_type" {
   type = string
-  default = "pc"
+  default = "q35"
 }
 
 variable "boot_wait" {
