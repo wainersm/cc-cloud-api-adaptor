@@ -55,7 +55,10 @@ RUN echo $CAA_SRC
 
 RUN echo $CAA_SRC_BRANCH
 
-RUN git clone ${CAA_SRC} -b ${CAA_SRC_BRANCH} cloud-api-adaptor
+RUN git clone ${CAA_SRC} cloud-api-adaptor && \
+    cd cloud-api-adaptor && \
+    git fetch origin ${CAA_SRC_BRANCH} && \
+    git checkout FETCH_HEAD -b ${CAA_SRC_BRANCH}
 RUN git clone ${KATA_SRC} -b ${KATA_SRC_BRANCH} kata-containers
 
 

@@ -16,7 +16,8 @@ jobs:
           #- os: centos
           #  dockerfile: Dockerfile.podvm_builder.centos
           - podvm-os: ubuntu
-            dockerfile: Dockerfile.podvm_builder
+            dockerfile_builder: Dockerfile.podvm_builder
+            dockerfile: Dockerfile.podvm
         runner:
           - ubuntu-latest
     steps:
@@ -35,19 +36,19 @@ jobs:
         context: podvm
         platforms: linux/amd64
         file: |
-          podvm/${{ matrix.dockerfile }}
+          podvm/${{ matrix.dockerfile_builder }}
         build-args: |
           "CAA_SRC=https://github.com/${{ github.repository }}.git"
           "CAA_SRC_BRANCH=${{ github.ref }}"
-    #- name: Build the podvm image
-    #  uses: docker/build-push-action@v3
-    #  with:
-    #    tags: |
-    #      podvm-builder-${{ matrix.podvm-os }}:latest
-    #    push: false
-    #    context: podvm
-    #    platforms: linux/amd64
-    #    file: |
+    - name: Build the podvm image
+      uses: docker/build-push-action@v3
+      with:
+        tags: |
+          podvm-${{ matrix.podvm-os }}:latest
+        push: false
+        context: podvm
+        platforms: linux/amd64
+        file: |
     #      podvm/${{ matrix.dockerfile }}
     #    build-args: |
     #      "CAA_SRC=https://github.com/${{ github.repository }}.git"
