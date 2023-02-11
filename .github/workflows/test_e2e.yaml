@@ -52,4 +52,4 @@ jobs:
           podvm/${{ matrix.dockerfile }}
         build-args: |
           "CLOUD_PROVIDER=libvirt"
-          "BUILDER_IMG=podvm-builder-${{ matrix.podvm-os }}:latest"
+          "BUILDER_IMG=localhost/podvm-builder-${{ matrix.podvm-os }}:latest"
