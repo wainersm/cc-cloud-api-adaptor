@@ -35,6 +35,7 @@ jobs:
         push: false
         context: podvm
         platforms: linux/amd64
+        cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
         file: |
           podvm/${{ matrix.dockerfile_builder }}
         build-args: |
@@ -50,8 +51,9 @@ jobs:
         push: false
         context: podvm
         platforms: linux/amd64
+        cache-from: type=local,dest=/tmp/.buildx-cache,mode=max
         file: |
           podvm/${{ matrix.dockerfile }}
         build-args: |
           "CLOUD_PROVIDER=libvirt"
-          "BUILDER_IMG=localhost/podvm-builder-${{ matrix.podvm-os }}:latest"
+          "BUILDER_IMG=podvm-builder-${{ matrix.podvm-os }}:latest"
