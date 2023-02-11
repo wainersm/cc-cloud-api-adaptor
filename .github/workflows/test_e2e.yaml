@@ -40,6 +40,8 @@ jobs:
         build-args: |
           "CAA_SRC=https://github.com/${{ github.repository }}.git"
           "CAA_SRC_BRANCH=${{ github.ref }}"
+    - name: Test
+      run: docker images
     - name: Build the podvm image
       uses: docker/build-push-action@v3
       with:
