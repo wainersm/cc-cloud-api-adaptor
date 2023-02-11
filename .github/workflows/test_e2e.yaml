@@ -1,9 +1,9 @@
-name: Run end-to-end tests
+name: test-e2e
 on: [pull_request]
 
 jobs:
   test-e2e-libvirt:
-    name: Create pod vm builder image
+    name: libvirt
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -20,8 +20,8 @@ jobs:
         runner:
           - ubuntu-latest
     steps:
-    #- name: Checkout Code
-    #  uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
