@@ -1,8 +1,4 @@
-# Setup instructions
 
-- KVM host with libvirt configured.
-- Libvirt network and storage pool created
-- A base storage volume created for POD VM
 
 ## Creation of base storage volume
 
