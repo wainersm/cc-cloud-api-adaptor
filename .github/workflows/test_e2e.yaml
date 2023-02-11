@@ -37,5 +37,18 @@ jobs:
         file: |
           podvm/${{ matrix.dockerfile }}
         build-args: |
-          "CAA_SRC=https://github.com/confidential-containers/cloud-api-adaptor"
-          "CAA_SRC_BRANCH=staging"
+          "CAA_SRC=https://github.com/${{ github.repository }}.git"
+          "CAA_SRC_BRANCH=${{ github.ref }}"
+    #- name: Build the podvm image
+    #  uses: docker/build-push-action@v3
+    #  with:
+    #    tags: |
+    #      podvm-builder-${{ matrix.podvm-os }}:latest
+    #    push: false
+    #    context: podvm
+    #    platforms: linux/amd64
+    #    file: |
+    #      podvm/${{ matrix.dockerfile }}
+    #    build-args: |
+    #      "CAA_SRC=https://github.com/${{ github.repository }}.git"
+    #      "CAA_SRC_BRANCH=${{ github.ref }}"
