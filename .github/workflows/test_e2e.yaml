@@ -39,7 +39,7 @@ jobs:
           podvm/${{ matrix.dockerfile_builder }}
         build-args: |
           "CAA_SRC=https://github.com/${{ github.repository }}.git"
-          "CAA_SRC_BRANCH=${{ github.ref }}"
+          "CAA_SRC_REF=${{ github.ref }}"
     - name: Test
       run: docker images
     - name: Build the podvm image
