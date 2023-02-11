@@ -1,0 +1,63 @@
+name: test-e2e
+on: [pull_request]
+
+jobs:
+  test-e2e-libvirt:
+    name: libvirt
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        podvm-os:
+          # Please keep this list in alphabetical order.
+          #- centos
+          - ubuntu
+        include:
+          #- os: centos
+          #  dockerfile: Dockerfile.podvm_builder.centos
+          - podvm-os: ubuntu
+            dockerfile_builder: Dockerfile.podvm_builder
+            dockerfile: Dockerfile.podvm
+        runner:
+          - ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Start local registry server
+      run: docker run -d --name registry --network=host registry:2
+ 
+    - name: Build the podvm builder
+      uses: docker/build-push-action@v3
+      with:
+        tags: |
+          localhost:5000/podvm-builder-${{ matrix.podvm-os }}:latest
+        push: true
+        context: podvm
+        platforms: linux/amd64
+        #cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
+        #load: true
+        file: |
+          podvm/${{ matrix.dockerfile_builder }}
+        build-args: |
+          "CAA_SRC=https://github.com/${{ github.repository }}.git"
+          "CAA_SRC_REF=${{ github.ref }}"
+    #- name: Test
+    #  run: docker images
+    - name: Build the podvm image
+      uses: docker/build-push-action@v3
+      with:
+        tags: |
+          podvm-${{ matrix.podvm-os }}:latest
+        push: false
+        context: podvm
+        platforms: linux/amd64
+        #cache-from: type=local,dest=/tmp/.buildx-cache,mode=max
+        file: |
+          podvm/${{ matrix.dockerfile }}
+        build-args: |
+          "CLOUD_PROVIDER=libvirt"
+          "BUILDER_IMG=localhost:5000/podvm-builder-${{ matrix.podvm-os }}:latest"
