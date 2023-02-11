@@ -49,7 +49,7 @@ jobs:
         context: podvm
         platforms: linux/amd64
         file: |
-    #      podvm/${{ matrix.dockerfile }}
-    #    build-args: |
-    #      "CAA_SRC=https://github.com/${{ github.repository }}.git"
-    #      "CAA_SRC_BRANCH=${{ github.ref }}"
+          podvm/${{ matrix.dockerfile }}
+        build-args: |
+          "CLOUD_PROVIDER=libvirt"
+          "BUILDER_IMG=podvm-builder-${{ matrix.podvm-os }}:latest"
