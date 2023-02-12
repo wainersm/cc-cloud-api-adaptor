@@ -29,7 +29,9 @@ jobs:
 
     - name: Start local registry server
       run: docker run -d --name registry --network=host registry:2
- 
+    - name: Test
+      run: docker ps -a
+
     - name: Build the podvm builder
       uses: docker/build-push-action@v3
       with:
@@ -45,8 +47,6 @@ jobs:
         build-args: |
           "CAA_SRC=https://github.com/${{ github.repository }}.git"
           "CAA_SRC_REF=${{ github.ref }}"
-    #- name: Test
-    #  run: docker images
     - name: Build the podvm image
       uses: docker/build-push-action@v3
       with:
@@ -61,3 +61,4 @@ jobs:
         build-args: |
           "CLOUD_PROVIDER=libvirt"
           "BUILDER_IMG=localhost:5000/podvm-builder-${{ matrix.podvm-os }}:latest"
+
