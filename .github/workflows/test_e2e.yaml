@@ -28,7 +28,9 @@ jobs:
       uses: docker/setup-buildx-action@v2
 
     - name: Start local registry server
-      run: docker run -d --name registry --network=host registry:2
+      #run: docker run -d --name registry --network=host registry:2
+      run: docker run -d --name registry -p 5000:5000 registry:2
+
     - name: Test
       run: docker ps -a
 
