@@ -2,24 +2,20 @@ name: test-e2e
 on: [pull_request]
 
 jobs:
-  test-e2e-libvirt:
-    name: libvirt
-    runs-on: ${{ matrix.runner }}
+  podvm_builder:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        podvm-os:
+        os:
           # Please keep this list in alphabetical order.
           #- centos
           - ubuntu
         include:
           #- os: centos
           #  dockerfile: Dockerfile.podvm_builder.centos
-          - podvm-os: ubuntu
-            dockerfile_builder: Dockerfile.podvm_builder
-            dockerfile: Dockerfile.podvm
-        runner:
-          - ubuntu-latest
+          - os: ubuntu
+            dockerfile: Dockerfile.podvm_builder
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -38,21 +34,39 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         tags: |
-          ghcr.io/${{ github.repository_owner }}/ci-podvm-builder-${{ matrix.podvm-os }}:${{ github.event.number  }}
+          ghcr.io/${{ github.repository_owner }}/ci-podvm-builder-${{ matrix.os }}:pr${{ github.event.number  }}
         push: true
         context: podvm
         platforms: linux/amd64
         #cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
         file: |
-          podvm/${{ matrix.dockerfile_builder }}
+          podvm/${{ matrix.dockerfile }}
         build-args: |
           "CAA_SRC=https://github.com/${{ github.repository }}.git"
           "CAA_SRC_REF=${{ github.ref }}"
+  podvm:
+    needs: podvm_builder
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          # Please keep this list in alphabetical order.
+          #- centos
+          - ubuntu
+        provider:
+          - libvirt
+        include:
+          #- os: centos
+          #  dockerfile: Dockerfile.podvm.centos
+          - os: ubuntu
+            dockerfile: Dockerfile.podvm
+    steps:
     - name: Build the podvm image
       uses: docker/build-push-action@v3
       with:
         tags: |
-          podvm-${{ matrix.podvm-os }}-libvirt:${{ github.event.number }}
+          podvm-${{ matrix.os }}-${{ matrix.provider }}:pr${{ github.event.number }}
         push: false
         load: true
         context: podvm
@@ -61,8 +75,8 @@ jobs:
         file: |
           podvm/${{ matrix.dockerfile }}
         build-args: |
-          "CLOUD_PROVIDER=libvirt"
-          "BUILDER_IMG=ghcr.io/${{ github.repository_owner }}/ci-podvm-builder-${{ matrix.podvm-os }}:${{ github.event.number }}"
+          "CLOUD_PROVIDER=${{ matrix.provider }}"
+          "BUILDER_IMG=ghcr.io/${{ github.repository_owner }}/ci-podvm-builder-${{ matrix.os }}:pr${{ github.event.number }}"
     - name: Extract the podvm qcow2
-      run: ./hack/download-image.sh podvm-${{ matrix.podvm-os }}-libvirt:${{ github.event.number }} . -o podvm-${{ matrix.podvm-os }}-libvirt  
+      run: ./hack/download-image.sh podvm-${{ matrix.os }}-${{ matrix.provider }}:pr${{ github.event.number }} . -o podvm-${{ matrix.os }}-${{ matrix.provider }}.qcow2
       working-directory: podvm
