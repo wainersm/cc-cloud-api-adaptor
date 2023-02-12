@@ -1,9 +1,5 @@
 # Introduction
 
-This directory contains the sources to build the podvm image (qcow2 file) for various Linux distributions and cloud providers. So use
-the instructions in the next sections if you need to build your own image with changes to meet your requirements. Otherwise you can
-find [here](../docs/consuming-prebuilt-podvm-images.md) information on how to consume pre-built images.
-
 # How to build locally
 
 In order to build locally it requires the source trees and softwares mentioned in the [developer's guide](../docs/DEVELOPMENT.md) to build this project binaries. It will also need [packer](https://www.packer.io/) (to build the qcow2), [rust](https://www.rust-lang.org/tools/install) (to build the Kata Containers's agent), as well as the following packages:
