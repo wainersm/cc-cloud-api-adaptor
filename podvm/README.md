@@ -1,8 +1,5 @@
 # Introduction
 
-This directory contains the sources to build the podvm image (qcow2 file) for various Linux distributions and cloud providers. So use
-the instructions in the next sections if you need to build your own image with changes to meet your requirements. Otherwise you can
-find [here](../docs/consuming-prebuilt-podvm-images.md) information on how to consume pre-built images.
 
 # How to build locally
 
