@@ -54,7 +54,7 @@ jobs:
         tags: |
           podvm-${{ matrix.podvm-os }}-libvirt:${{ github.event.number }}
         push: false
-        load:true
+        load: true
         context: podvm
         platforms: linux/amd64
         #cache-from: type=local,dest=/tmp/.buildx-cache,mode=max
