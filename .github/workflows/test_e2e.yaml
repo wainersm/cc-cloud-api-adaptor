@@ -2,6 +2,8 @@ name: test-e2e
 on: [pull_request]
 
 jobs:
+  # Build and push the podvm builder image for each OS.
+  #
   podvm_builder:
     runs-on: ubuntu-latest
     strategy:
@@ -38,12 +40,12 @@ jobs:
         push: true
         context: podvm
         platforms: linux/amd64
-        #cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
         file: |
           podvm/${{ matrix.dockerfile }}
         build-args: |
           "CAA_SRC=https://github.com/${{ github.repository }}.git"
           "CAA_SRC_REF=${{ github.ref }}"
+  # Build the podvm image and extract the qcow2 for each os/provider combination.
   podvm:
     needs: podvm_builder
     runs-on: ubuntu-latest
@@ -61,6 +63,10 @@ jobs:
           #  dockerfile: Dockerfile.podvm.centos
           - os: ubuntu
             dockerfile: Dockerfile.podvm
+    env:
+      builder_image: ghcr.io/${{ github.repository_owner }}/ci-podvm-builder-${{ matrix.os }}:pr${{ github.event.number }}
+      podvm_image: podvm-${{ matrix.os }}-${{ matrix.provider }}:pr${{ github.event.number }}
+      qcow2: podvm-${{ matrix.os }}-${{ matrix.provider }}.qcow2
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -72,20 +78,29 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         tags: |
-          podvm-${{ matrix.os }}-${{ matrix.provider }}:pr${{ github.event.number }}
+          "${{ env.podvm_image }}"
         push: false
         load: true
         context: podvm
         platforms: linux/amd64
-        #cache-from: type=local,dest=/tmp/.buildx-cache,mode=max
         file: |
           podvm/${{ matrix.dockerfile }}
         build-args: |
           "CLOUD_PROVIDER=${{ matrix.provider }}"
-          "BUILDER_IMG=ghcr.io/${{ github.repository_owner }}/ci-podvm-builder-${{ matrix.os }}:pr${{ github.event.number }}"
+          "BUILDER_IMG=${{ env.builder_image }}"
+
     - name: Extract the podvm qcow2
-      run: ./hack/download-image.sh podvm-${{ matrix.os }}-${{ matrix.provider }}:pr${{ github.event.number }} . -o podvm-${{ matrix.os }}-${{ matrix.provider }}.qcow2
+      run: ./hack/download-image.sh ${{ env.podvm_image }} . -o ${{ env.qcow2 }}
       working-directory: podvm
+
+    - name: Cache the qcow2 file
+      uses: actions/cache/save@v3
+      env:
+        qcow2_path: podvm/${{ env.qcow2 }}
+      with:
+        path: |
+          ${{ env.qcow2_path }}
+        key: ${{ env.qcow2}}-${{ hashFiles(env.qcow2_path) }}
   # TODO: This almost identical to image.yaml. Let's use shared workflows to avoid duplication.
   caa-build:
     runs-on: ubuntu-latest
@@ -138,7 +153,6 @@ jobs:
         push: true
         context: .
         platforms: ${{ matrix.arches }}
-        #cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
         file: Dockerfile
         build-args: |
           "CLOUD_PROVIDER=${{ matrix.provider }}"
