@@ -82,10 +82,13 @@ func TestMain(m *testing.M) {
 		}
 
 		if podvmImage != "" {
+			fmt.Println("Podvm uploading")
 			if err = provisioner.UploadPodvm(podvmImage, ctx, cfg); err != nil {
 				return ctx, err
 			}
 		}
+
+		return ctx, fmt.Errorf("stop here")
 
 		peerPods := NewPeerPods(cloudProvider)
 		fmt.Println("Deploy Peer Pods")
