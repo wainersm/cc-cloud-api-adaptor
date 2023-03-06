@@ -57,7 +57,7 @@ jobs:
           #- centos
           - ubuntu
         provider:
-          - libvirt
+          - generic
         include:
           #- os: centos
           #  dockerfile: Dockerfile.podvm.centos
@@ -65,8 +65,8 @@ jobs:
             dockerfile: Dockerfile.podvm
     env:
       builder_image: ghcr.io/${{ github.repository_owner }}/ci-podvm-builder-${{ matrix.os }}:pr${{ github.event.number }}
-      podvm_image: podvm-${{ matrix.os }}-${{ matrix.provider }}:pr${{ github.event.number }}
-      qcow2: podvm-${{ matrix.os }}-${{ matrix.provider }}.qcow2
+      podvm_image: podvm-${{ matrix.provider }}-${{ matrix.os }}:pr${{ github.event.number }}
+      qcow2: podvm-${{ matrix.provider }}-${{ matrix.os }}.qcow2
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
