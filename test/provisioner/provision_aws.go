@@ -86,7 +86,14 @@ func (aws *AWSProvisioner) CreateCluster(ctx context.Context, cfg *envconf.Confi
 	return nil
 }
 
-func (aws *AWSProvisioner) CreateVPC(ctx context.Context, cfg *envconf.Config) error {
+func (a *AWSProvisioner) CreateVPC(ctx context.Context, cfg *envconf.Config) error {
+	_, err := a.ec2Client.CreateVpc(context.TODO(), &ec2.CreateVpcInput{
+		DryRun: aws.Bool(true),
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
