@@ -45,6 +45,16 @@ type AMIImage struct {
 	RootDeviceName  string // Root device name
 }
 
+//Vpc Represents an AWS VPC
+type Vpc struct {
+	BaseName        string
+	CidrBlock       string
+	Client          *ec2.Client
+	ID              string
+	SecurityGroupId string
+	SubnetId        string
+}
+
 // AWSProvisioner implements the CloudProvision interface.
 type AWSProvisioner struct {
 	AwsConfig aws.Config
@@ -53,6 +63,7 @@ type AWSProvisioner struct {
 	s3Client  *s3.Client
 	Bucket    *S3Bucket
 	Image     *AMIImage
+	Vpc       *Vpc
 }
 
 //NewAWSProvisioner Instantiates a new AWS provisioner
@@ -79,6 +90,7 @@ func NewAWSProvisioner(properties map[string]string) (CloudProvisioner, error) {
 			Key:    "", // To be defined when the file is uploaded
 		},
 		Image: NewAMIImage(ec2Client, properties),
+		Vpc:   NewVpc(ec2Client, properties),
 	}, nil
 }
 
@@ -87,11 +99,34 @@ func (aws *AWSProvisioner) CreateCluster(ctx context.Context, cfg *envconf.Confi
 }
 
 func (a *AWSProvisioner) CreateVPC(ctx context.Context, cfg *envconf.Config) error {
-	_, err := a.ec2Client.CreateVpc(context.TODO(), &ec2.CreateVpcInput{
-		DryRun: aws.Bool(true),
-	})
-	if err != nil {
-		return err
+	var err error
+
+	if a.Vpc.ID == "" {
+		log.Infof("Create AWS VPC on region %s", a.AwsConfig.Region)
+		if err = a.Vpc.createVpc(); err != nil {
+			return err
+		}
+		log.Infof("VPC Id: %s", a.Vpc.ID)
+	}
+
+	if a.Vpc.SubnetId == "" {
+		log.Infof("Create subnet on VPC %s", a.Vpc.ID)
+		if err = a.Vpc.createSubnet(); err != nil {
+			return err
+		}
+		log.Infof("Subnet Id: %s", a.Vpc.SubnetId)
+
+		if err = a.Vpc.setupVpcNetworking(); err != nil {
+			return err
+		}
+	}
+
+	if a.Vpc.SecurityGroupId == "" {
+		log.Infof("Create security group on VPC %s", a.Vpc.ID)
+		if err = a.Vpc.setupSecurityGroup(); err != nil {
+			return err
+		}
+		log.Infof("Security groupd Id: %s", a.Vpc.SecurityGroupId)
 	}
 
 	return nil
@@ -158,6 +193,243 @@ func (a *AWSProvisioner) UploadPodvm(imagePath string, ctx context.Context, cfg 
 	log.Infof("Register image")
 	err = a.Image.registerImage("podvm-ubuntu")
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NewVpc(client *ec2.Client, properties map[string]string) *Vpc {
+	// Initialize the VPC CidrBlock
+	cidrBlock := properties["aws_vpc_cidrblock"]
+	if cidrBlock == "" {
+		cidrBlock = "10.0.0.0/16"
+	}
+
+	return &Vpc{
+		BaseName:        "caa-e2e-test",
+		CidrBlock:       cidrBlock,
+		Client:          client,
+		ID:              properties["aws_vpc_id"],
+		SecurityGroupId: properties["aws_vpc_sg_id"],
+		SubnetId:        properties["aws_vpc_subnet_id"],
+	}
+}
+
+func (v *Vpc) createVpc() error {
+	ret, err := v.Client.CreateVpc(context.TODO(), &ec2.CreateVpcInput{
+		//DryRun:    aws.Bool(true),
+		CidrBlock: aws.String(v.CidrBlock),
+		TagSpecifications: []ec2types.TagSpecification{
+			{
+				ResourceType: ec2types.ResourceTypeVpc,
+				Tags: []ec2types.Tag{
+					{
+						Key:   aws.String("Name"),
+						Value: aws.String(v.BaseName + "-vpc"),
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	v.ID = *ret.Vpc.VpcId
+	return nil
+}
+
+//createSubnet Creates a VPC subnet
+func (v *Vpc) createSubnet() error {
+	ret, err := v.Client.CreateSubnet(context.TODO(), &ec2.CreateSubnetInput{
+		//DryRun: aws.Bool(true),
+		VpcId: aws.String(v.ID),
+		//AvailabilityZone: ,
+		CidrBlock: aws.String("10.0.0.0/24"),
+		TagSpecifications: []ec2types.TagSpecification{
+			{
+				ResourceType: ec2types.ResourceTypeSubnet,
+				Tags: []ec2types.Tag{
+					{
+						Key:   aws.String("Name"),
+						Value: aws.String(v.BaseName + "-subnet"),
+					},
+				},
+			},
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	v.SubnetId = *ret.Subnet.SubnetId
+
+	// Allow for instances created on the subnet to have a public IP assigned
+	if _, err = v.Client.ModifySubnetAttribute(context.TODO(), &ec2.ModifySubnetAttributeInput{
+		MapPublicIpOnLaunch: &ec2types.AttributeBooleanValue{
+			Value: aws.Bool(true),
+		},
+		SubnetId: aws.String(v.SubnetId),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//setupInternetGateway Creates an internet gateway, table of routes and associated with the VPC
+func (v *Vpc) setupVpcNetworking() error {
+	var (
+		rtOutput  *ec2.CreateRouteTableOutput
+		igwOutput *ec2.CreateInternetGatewayOutput
+	)
+
+	if v.SubnetId == "" {
+		return fmt.Errorf("Missing subnet Id to setup the VPC %s network\n", v.ID)
+	}
+
+	igwOutput, err := v.Client.CreateInternetGateway(context.TODO(), &ec2.CreateInternetGatewayInput{
+		TagSpecifications: []ec2types.TagSpecification{
+			{
+				ResourceType: ec2types.ResourceTypeInternetGateway,
+				Tags: []ec2types.Tag{
+					{
+						Key:   aws.String("Name"),
+						Value: aws.String(v.BaseName + "-igw"),
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	if _, err = v.Client.AttachInternetGateway(context.TODO(), &ec2.AttachInternetGatewayInput{
+		InternetGatewayId: igwOutput.InternetGateway.InternetGatewayId,
+		VpcId:             aws.String(v.ID),
+	}); err != nil {
+		return err
+	}
+
+	if rtOutput, err = v.Client.CreateRouteTable(context.TODO(), &ec2.CreateRouteTableInput{
+		VpcId: aws.String(v.ID),
+		TagSpecifications: []ec2types.TagSpecification{
+			{
+				ResourceType: ec2types.ResourceTypeRouteTable,
+				Tags: []ec2types.Tag{
+					{
+						Key:   aws.String("Name"),
+						Value: aws.String(v.BaseName + "-rtb"),
+					},
+				},
+			},
+		},
+	}); err != nil {
+		return err
+	}
+
+	if _, err := v.Client.CreateRoute(context.TODO(), &ec2.CreateRouteInput{
+		RouteTableId:         rtOutput.RouteTable.RouteTableId,
+		DestinationCidrBlock: aws.String("0.0.0.0/0"),
+		GatewayId:            igwOutput.InternetGateway.InternetGatewayId,
+	}); err != nil {
+		return err
+	}
+	// TODO: Create IPv6 route?
+
+	if _, err := v.Client.AssociateRouteTable(context.TODO(), &ec2.AssociateRouteTableInput{
+		RouteTableId: rtOutput.RouteTable.RouteTableId,
+		SubnetId:     aws.String(v.SubnetId),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (v *Vpc) setupSecurityGroup() error {
+	sgOutput, err := v.Client.CreateSecurityGroup(context.TODO(), &ec2.CreateSecurityGroupInput{
+		Description: aws.String("cloud-api-adaptor e2e tests"),
+		GroupName:   aws.String(v.BaseName + "-sg"),
+		VpcId:       aws.String(v.ID),
+	})
+	if err != nil {
+		return err
+	}
+
+	v.SecurityGroupId = *sgOutput.GroupId
+
+	if _, err = v.Client.AuthorizeSecurityGroupIngress(context.TODO(), &ec2.AuthorizeSecurityGroupIngressInput{
+		IpPermissions: []ec2types.IpPermission{
+			{
+				FromPort:   aws.Int32(-1),
+				IpProtocol: aws.String("icmp"),
+				IpRanges: []ec2types.IpRange{
+					{
+						CidrIp:      aws.String("0.0.0.0/0"),
+						Description: aws.String("ingress rule for icmp access"),
+					},
+				},
+				ToPort: aws.Int32(-1),
+			},
+			{
+				FromPort:   aws.Int32(22),
+				IpProtocol: aws.String("tcp"),
+				IpRanges: []ec2types.IpRange{
+					{
+						CidrIp:      aws.String("0.0.0.0/0"),
+						Description: aws.String("ingress rule for ssh access"),
+					},
+				},
+				ToPort: aws.Int32(22),
+			},
+			{
+				FromPort:   aws.Int32(6443),
+				IpProtocol: aws.String("tcp"),
+				IpRanges: []ec2types.IpRange{
+					{
+						CidrIp:      aws.String("0.0.0.0/0"),
+						Description: aws.String("ingress rule for https traffic"),
+					},
+				},
+				ToPort: aws.Int32(6443),
+			},
+		},
+		GroupId: aws.String(v.SecurityGroupId),
+	}); err != nil {
+		return err
+	}
+
+	if _, err = v.Client.AuthorizeSecurityGroupEgress(context.TODO(), &ec2.AuthorizeSecurityGroupEgressInput{
+		IpPermissions: []ec2types.IpPermission{
+			{
+				FromPort:   aws.Int32(6443),
+				IpProtocol: aws.String("tcp"),
+				IpRanges: []ec2types.IpRange{
+					{
+						CidrIp:      aws.String("0.0.0.0/0"),
+						Description: aws.String("egress rule for https traffic"),
+					},
+				},
+				ToPort: aws.Int32(6443),
+			},
+			//{
+			//	FromPort:   aws.Int32(0),
+			//	IpProtocol: aws.String("-1"),
+			//	IpRanges: []ec2types.IpRange{
+			//		{
+			//			CidrIp:      aws.String("0.0.0.0/0"),
+			//			Description: aws.String("egress rule for internet access"),
+			//		},
+			//	},
+			//	ToPort: aws.Int32(0),
+			//},
+		},
+		GroupId: aws.String(v.SecurityGroupId),
+	}); err != nil {
 		return err
 	}
 
