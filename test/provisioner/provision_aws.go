@@ -26,6 +26,7 @@ import (
 
 func init() {
 	newProvisionerFunctions["aws"] = NewAWSProvisioner
+	newInstallOverlayFunctions["aws"] = NewAwsInstallOverlay
 }
 
 //S3Bucket Represents an S3 bucket where the podvm image should be uploaded
@@ -58,13 +59,20 @@ type Vpc struct {
 
 // AWSProvisioner implements the CloudProvision interface.
 type AWSProvisioner struct {
-	AwsConfig aws.Config
-	iamClient *iam.Client
-	ec2Client *ec2.Client
-	s3Client  *s3.Client
-	Bucket    *S3Bucket
-	Image     *AMIImage
-	Vpc       *Vpc
+	AwsConfig  aws.Config
+	iamClient  *iam.Client
+	ec2Client  *ec2.Client
+	s3Client   *s3.Client
+	Bucket     *S3Bucket
+	PauseImage string
+	Image      *AMIImage
+	Vpc        *Vpc
+	VxlanPort  string
+}
+
+// AwsInstallOverlay implements the InstallOverlay interface
+type AwsInstallOverlay struct {
+	overlay *KustomizeOverlay
 }
 
 //NewAWSProvisioner Instantiates a new AWS provisioner
@@ -90,8 +98,10 @@ func NewAWSProvisioner(properties map[string]string) (CloudProvisioner, error) {
 			Name:   "peer-pods-tests",
 			Key:    "", // To be defined when the file is uploaded
 		},
-		Image: NewAMIImage(ec2Client, properties),
-		Vpc:   NewVpc(ec2Client, properties),
+		Image:      NewAMIImage(ec2Client, properties),
+		PauseImage: properties["pause_image"],
+		Vpc:        NewVpc(ec2Client, properties),
+		VxlanPort:  properties["vxlan_port"],
 	}, nil
 }
 
@@ -148,8 +158,25 @@ func (aws *AWSProvisioner) DeleteVPC(ctx context.Context, cfg *envconf.Config) e
 	return nil
 }
 
-func (aws *AWSProvisioner) GetProperties(ctx context.Context, cfg *envconf.Config) map[string]string {
-	return make(map[string]string)
+func (a *AWSProvisioner) GetProperties(ctx context.Context, cfg *envconf.Config) map[string]string {
+	credentials, _ := a.AwsConfig.Credentials.Retrieve(context.TODO())
+
+	return map[string]string{
+		"pause_image":          a.PauseImage,
+		"podvm_launchtemplate": "",
+		"podvm_ami":            a.Image.ID,
+		"podvm_instance_type":  "t3.small",
+		"sg_ids":               a.Vpc.SecurityGroupId, // TODO: what other SG needed?
+		"subnet_id":            a.Vpc.SubnetId,
+		"ssh_kp_name":          "",
+		"region":               a.AwsConfig.Region,
+		"access_key_id":        credentials.AccessKeyID,
+		"secret_access_key":    credentials.SecretAccessKey,
+		"vxlan_port":           a.VxlanPort,
+	}
+
+	//#- PAUSE_IMAGE="" # Uncomment and set if you want to use a specific pause image
+	//#- VXLAN_PORT="" # Uncomment and set if you want to use a specific vxlan port. Defaults to 4789
 }
 
 func (a *AWSProvisioner) UploadPodvm(imagePath string, ctx context.Context, cfg *envconf.Config) error {
@@ -902,9 +929,6 @@ func createInstances(vpc Vpc, numNodes int32, sshKeyPairName string) ([]string, 
 			},
 		},
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	instanceIds := make([]string, 0)
 	for _, instance := range ret.Instances {
@@ -920,4 +944,70 @@ func createInstances(vpc Vpc, numNodes int32, sshKeyPairName string) ([]string, 
 	}
 
 	return instanceIds, nil
+}
+
+func NewAwsInstallOverlay() (InstallOverlay, error) {
+	overlay, err := NewKustomizeOverlay("../../install/overlays/aws")
+	if err != nil {
+		return nil, err
+	}
+
+	return &AwsInstallOverlay{
+		overlay: overlay,
+	}, nil
+}
+
+func (a *AwsInstallOverlay) Apply(ctx context.Context, cfg *envconf.Config) error {
+	return a.overlay.Apply(ctx, cfg)
+}
+
+func (a *AwsInstallOverlay) Delete(ctx context.Context, cfg *envconf.Config) error {
+	return a.overlay.Delete(ctx, cfg)
+}
+
+// Update install/overlays/libvirt/kustomization.yaml
+func (a *AwsInstallOverlay) Edit(ctx context.Context, cfg *envconf.Config, properties map[string]string) error {
+	var err error
+
+	// Mapping the internal properties to ConfigMapGenerator properties.
+	mapProps := map[string]string{
+		"pause_image":          "PAUSE_IMAGE",
+		"podvm_launchtemplate": "PODVM_LAUNCHTEMPLATE_NAME",
+		"podvm_ami":            "PODVM_AMI_ID",
+		"podvm_instance_type":  "PODVM_INSTANCE_TYPE",
+		"sg_ids":               "AWS_SG_IDS",
+		"subnet_id":            "AWS_SUBNET_ID",
+		"ssh_kp_name":          "SSH_KP_NAME",
+		"region":               "AWS_REGION",
+		"vxlan_port":           "VXLAN_PORT",
+	}
+
+	for k, v := range mapProps {
+		if properties[k] != "" {
+			if err = a.overlay.SetKustomizeConfigMapGeneratorLiteral("peer-pods-cm",
+				v, properties[k]); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Mapping the internal properties to SecretGenerator properties.
+	mapProps = map[string]string{
+		"access_key_id":     "AWS_ACCESS_KEY_ID",
+		"secret_access_key": "AWS_SECRET_ACCESS_KEY",
+	}
+	for k, v := range mapProps {
+		if properties[k] != "" {
+			if err = a.overlay.SetKustomizeSecretGeneratorLiteral("peer-pods-secret",
+				v, properties[k]); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err = a.overlay.YamlReload(); err != nil {
+		return err
+	}
+
+	return nil
 }
