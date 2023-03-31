@@ -19,6 +19,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	kconf "sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"time"
 )
@@ -94,7 +95,14 @@ func NewAWSProvisioner(properties map[string]string) (CloudProvisioner, error) {
 	}, nil
 }
 
-func (aws *AWSProvisioner) CreateCluster(ctx context.Context, cfg *envconf.Config) error {
+func (a *AWSProvisioner) CreateCluster(ctx context.Context, cfg *envconf.Config) error {
+	// TODO: At this point it won't create the cluster but actually rely on an existing one.
+	kubeconfigPath := kconf.ResolveKubeConfigFile()
+	if kubeconfigPath == "" {
+		return fmt.Errorf("Unabled to find a kubeconfig file")
+	}
+	*cfg = *envconf.NewWithKubeConfig(kubeconfigPath)
+
 	return nil
 }
 
@@ -828,4 +836,88 @@ func ConvertQcow2ToRaw(qcow2 string, raw string) error {
 	}
 
 	return nil
+}
+
+// createEc2PemKeyPair Creates a EC2 KeyPair of PEM format
+func createEc2PemKeyPair(client ec2.Client, keyName string) (fingerprint string, key string, err error) {
+	fingerprint = ""
+	key = ""
+
+	ret, err := client.CreateKeyPair(context.TODO(), &ec2.CreateKeyPairInput{
+		KeyName:   aws.String(keyName),
+		KeyFormat: ec2types.KeyFormatPem,
+		KeyType:   ec2types.KeyTypeRsa,
+	})
+
+	if err == nil {
+		fingerprint = *ret.KeyFingerprint
+		key = *ret.KeyMaterial
+	}
+
+	return fingerprint, key, err
+
+}
+
+func createInstances(vpc Vpc, numNodes int32, sshKeyPairName string) ([]string, error) {
+	// Create the k8s master node
+	ret, err := vpc.Client.RunInstances(context.TODO(), &ec2.RunInstancesInput{
+		MaxCount: aws.Int32(numNodes),
+		MinCount: aws.Int32(1),
+		BlockDeviceMappings: []ec2types.BlockDeviceMapping{
+			{
+				DeviceName: aws.String("/dev/sda1"),
+				Ebs: &ec2types.EbsBlockDevice{
+					DeleteOnTermination: aws.Bool(true),
+					Encrypted:           aws.Bool(false),
+					VolumeSize:          aws.Int32(30),
+					VolumeType:          ec2types.VolumeTypeGp2,
+				},
+			},
+		},
+		// TODO: map distro > ami > region
+		ImageId:      aws.String("ami-07a72d328538fc075"), // Ubuntu 20.04
+		InstanceType: ec2types.InstanceTypeT22xlarge,
+		KeyName:      aws.String(sshKeyPairName),
+		//NetworkInterfaces: []ec2types.InstanceNetworkInterfaceSpecification{
+		//	{
+		//		AssociatePublicIpAddress: aws.Bool(true),
+		//		DeleteOnTermination:      aws.Bool(true),
+		//		DeviceIndex:              aws.Int32(0),
+		//		Groups:                   []string{a.Vpc.SecurityGroupId},
+		//		InterfaceType:            aws.String("interface"),
+		//		SubnetId:                 aws.String("subnet-0a7dcef20dd41255d"),
+		//	},
+		//},
+		SecurityGroupIds: []string{vpc.SecurityGroupId},
+		SubnetId:         aws.String(vpc.SubnetId),
+		TagSpecifications: []ec2types.TagSpecification{
+			{
+				ResourceType: ec2types.ResourceTypeInstance,
+				Tags: []ec2types.Tag{
+					{
+						Key:   aws.String("Name"),
+						Value: aws.String(vpc.BaseName + "-node"),
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	instanceIds := make([]string, 0)
+	for _, instance := range ret.Instances {
+		instanceIds = append(instanceIds, *instance.InstanceId)
+		fmt.Println("instance id: ", *instance.InstanceId)
+	}
+
+	waiter := ec2.NewInstanceRunningWaiter(vpc.Client)
+	if err = waiter.Wait(context.TODO(), &ec2.DescribeInstancesInput{
+		InstanceIds: instanceIds,
+	}, time.Minute*3); err != nil {
+		return nil, err
+	}
+
+	return instanceIds, nil
 }
