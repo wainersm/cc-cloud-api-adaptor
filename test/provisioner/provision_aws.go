@@ -49,12 +49,14 @@ type AMIImage struct {
 
 //Vpc Represents an AWS VPC
 type Vpc struct {
-	BaseName        string
-	CidrBlock       string
-	Client          *ec2.Client
-	ID              string
-	SecurityGroupId string
-	SubnetId        string
+	BaseName          string
+	CidrBlock         string
+	Client            *ec2.Client
+	ID                string
+	InternetGatewayId string
+	RouteTableId      string
+	SecurityGroupId   string
+	SubnetId          string
 }
 
 // AWSProvisioner implements the CloudProvision interface.
@@ -154,7 +156,31 @@ func (aws *AWSProvisioner) DeleteCluster(ctx context.Context, cfg *envconf.Confi
 	return nil
 }
 
-func (aws *AWSProvisioner) DeleteVPC(ctx context.Context, cfg *envconf.Config) error {
+func (a *AWSProvisioner) DeleteVPC(ctx context.Context, cfg *envconf.Config) error {
+	var err error
+	vpc := a.Vpc
+
+	if vpc.SecurityGroupId != "" {
+		log.Infof("Delete security group: %s", vpc.SecurityGroupId)
+		if err = vpc.deleteSecurityGroup(); err != nil {
+			return err
+		}
+	}
+
+	if vpc.SubnetId != "" {
+		log.Infof("Delete subnet: %s", vpc.SubnetId)
+		if err = vpc.deleteSubnet(); err != nil {
+			return err
+		}
+	}
+
+	if vpc.ID != "" {
+		log.Infof("Delete vpc: %s", vpc.ID)
+		if err = vpc.deleteVpc(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -341,6 +367,7 @@ func (v *Vpc) setupVpcNetworking() error {
 	if err != nil {
 		return err
 	}
+	v.InternetGatewayId = *igwOutput.InternetGateway.InternetGatewayId
 
 	if _, err = v.Client.AttachInternetGateway(context.TODO(), &ec2.AttachInternetGatewayInput{
 		InternetGatewayId: igwOutput.InternetGateway.InternetGatewayId,
@@ -374,6 +401,7 @@ func (v *Vpc) setupVpcNetworking() error {
 		return err
 	}
 	// TODO: Create IPv6 route?
+	v.RouteTableId = *rtOutput.RouteTable.RouteTableId
 
 	if _, err := v.Client.AssociateRouteTable(context.TODO(), &ec2.AssociateRouteTableInput{
 		RouteTableId: rtOutput.RouteTable.RouteTableId,
@@ -464,6 +492,92 @@ func (v *Vpc) setupSecurityGroup() error {
 			//},
 		},
 		GroupId: aws.String(v.SecurityGroupId),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// deleteSecurityGroup deletes the security group.
+func (v *Vpc) deleteSecurityGroup() error {
+	if _, err := v.Client.DeleteSecurityGroup(context.TODO(), &ec2.DeleteSecurityGroupInput{
+		GroupId: aws.String(v.SecurityGroupId),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// deleteSubnet deletes the subnet. Instances running on the subnet will be deleted.
+func (v *Vpc) deleteSubnet() error {
+	// There will be needed to terminate all instances launched on the subnet.
+	describeInstances, err := v.Client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("subnet-id"),
+				Values: []string{v.SubnetId},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	instanceIds := make([]string, 0)
+	for _, reservation := range describeInstances.Reservations {
+		for _, instance := range reservation.Instances {
+			instanceIds = append(instanceIds, *instance.InstanceId)
+		}
+	}
+
+	if len(instanceIds) > 0 {
+		if _, err = v.Client.TerminateInstances(context.TODO(), &ec2.TerminateInstancesInput{
+			InstanceIds: instanceIds,
+		}); err != nil {
+			return err
+		}
+	}
+
+	if _, err = v.Client.DeleteSubnet(context.TODO(), &ec2.DeleteSubnetInput{
+		SubnetId: aws.String(v.SubnetId),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// deleteVpc deletes the VPC. All resources attached to it should be deleted befohand.
+func (v *Vpc) deleteVpc() error {
+	var err error
+
+	// Delete the networking resources first.
+	if v.RouteTableId != "" {
+		if _, err = v.Client.DeleteRouteTable(context.TODO(), &ec2.DeleteRouteTableInput{
+			RouteTableId: aws.String(v.RouteTableId),
+		}); err != nil {
+			return err
+		}
+	}
+
+	if v.InternetGatewayId != "" {
+		if _, err = v.Client.DetachInternetGateway(context.TODO(), &ec2.DetachInternetGatewayInput{
+			InternetGatewayId: aws.String(v.InternetGatewayId),
+			VpcId:             aws.String(v.ID),
+		}); err != nil {
+			return err
+		}
+		if _, err = v.Client.DeleteInternetGateway(context.TODO(), &ec2.DeleteInternetGatewayInput{
+			InternetGatewayId: aws.String(v.InternetGatewayId),
+		}); err != nil {
+			return err
+		}
+	}
+
+	if _, err := v.Client.DeleteVpc(context.TODO(), &ec2.DeleteVpcInput{
+		VpcId: aws.String(v.ID),
 	}); err != nil {
 		return err
 	}
