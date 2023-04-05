@@ -228,7 +228,7 @@ func (a *AWSProvisioner) UploadPodvm(imagePath string, ctx context.Context, cfg 
 	}
 
 	// Create the S3 bucket
-	log.Infof("Create bucket %s", a.Bucket.Name)
+	log.Infof("Create bucket '%s'", a.Bucket.Name)
 	if err = a.Bucket.createBucket(); err != nil {
 		return err
 	}
@@ -240,12 +240,12 @@ func (a *AWSProvisioner) UploadPodvm(imagePath string, ctx context.Context, cfg 
 	}
 
 	// Upload raw image to S3
-	log.Infof("Upload image %s to S3 bucket %s", imageRawPath, a.Bucket.Name)
-	if err = a.Bucket.uploadLargeFile(imageRawPath); err != nil {
+	log.Infof("Upload image %s to S3 bucket '%s'", imageRawPath, a.Bucket.Name)
+	if err = a.Bucket.uploadLargeFileWithCli(imageRawPath); err != nil {
 		return err
 	}
 
-	log.Infof("Import disk snapshot")
+	log.Infof("Import disk snapshot for S3 key '%s'", a.Bucket.Key)
 	if err = a.Image.importEBSSnapshot(a.Bucket); err != nil {
 		return err
 	}
@@ -963,6 +963,38 @@ func (b *S3Bucket) uploadLargeFile(filepath string) error {
 
 	fmt.Println("Completed multi-part upload")
 	abortMultipartUpload = false
+
+	return nil
+}
+
+//uploadLargeFileWithCli Uploads large files (>5GB) using the AWS CLI
+func (b *S3Bucket) uploadLargeFileWithCli(filepath string) error {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	key := stat.Name()
+	defer func() {
+		if err == nil {
+			b.Key = key
+		}
+	}()
+
+	s3uri := "s3://" + b.Name + "/" + key
+
+	// TODO: region!
+	cmd := exec.Command("aws", "s3", "cp", filepath, s3uri)
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
