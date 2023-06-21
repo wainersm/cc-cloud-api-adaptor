@@ -77,6 +77,29 @@ type AwsInstallOverlay struct {
 	overlay *KustomizeOverlay
 }
 
+//
+type SelfManagedAwsCluster struct {
+	vpc      *Vpc
+	cloud_lb string
+	domain   string
+	image    string
+	flavor   string
+	sdn      string
+	workers  string
+}
+
+func NewSelfManagedAwsCluster(vpc *Vpc) SelfManagedAwsCluster {
+	return SelfManagedAwsCluster{
+		cloud_lb: "false",
+		domain:   "caa-tests.openshift.com",
+		image:    "CentOS Stream 8 x86_64 20210603",
+		flavor:   "t2.2xlarge",
+		vpc:      vpc,
+		sdn:      "calico",
+		workers:  "1",
+	}
+}
+
 //NewAWSProvisioner Instantiates a new AWS provisioner
 func NewAWSProvisioner(properties map[string]string) (CloudProvisioner, error) {
 	cfg, err := awsConfig.LoadDefaultConfig(context.TODO())
@@ -108,7 +131,11 @@ func NewAWSProvisioner(properties map[string]string) (CloudProvisioner, error) {
 }
 
 func (a *AWSProvisioner) CreateCluster(ctx context.Context, cfg *envconf.Config) error {
-	// TODO: At this point it won't create the cluster but actually rely on an existing one.
+	s := NewSelfManagedAwsCluster(a.Vpc)
+	if err := s.CreateWithKcli(); err != nil {
+		return err
+	}
+
 	kubeconfigPath := kconf.ResolveKubeConfigFile()
 	if kubeconfigPath == "" {
 		return fmt.Errorf("Unabled to find a kubeconfig file")
@@ -1152,6 +1179,24 @@ func (a *AwsInstallOverlay) Edit(ctx context.Context, cfg *envconf.Config, prope
 	}
 
 	if err = a.overlay.YamlReload(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SelfManagedAwsCluster) CreateWithKcli() error {
+	// kcli -C aws create kube generic --paramfile <file> wainers-cluster
+
+	cmd := exec.Command("kcli", "create", "kube", "generic",
+		"-P", "domain="+s.domain, "-P", "flavor="+s.flavor,
+		"-P", "cloud_lb="+s.cloud_lb, "-P", fmt.Sprintf("image=\"%s\"", s.image),
+		"-P", "sdn="+s.sdn, "-P", "vpcid="+s.vpc.ID, "-P", "network="+s.vpc.SubnetId)
+
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	err := cmd.Run()
+	if err != nil {
 		return err
 	}
 
