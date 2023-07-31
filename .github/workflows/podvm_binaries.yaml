@@ -47,12 +47,17 @@ jobs:
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
 
+    # Note: The `github.ref_name` contain the tag name on the `release` event. If
+    # we ever change this workflow to run on other events (e.g. `push`) the value
+    # of `github.ref_name` will be the branch or tag that triggered the event
+    # and so it will be meaningless to tag the image with such as value.
     - name: Build and push
       uses: docker/build-push-action@v3
       with:
         tags: |
           quay.io/confidential-containers/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:latest
           quay.io/confidential-containers/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:${{ github.sha }}
+          quay.io/confidential-containers/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:${{ github.ref_name }}
         push: true
         context: podvm
         platforms: linux/amd64
