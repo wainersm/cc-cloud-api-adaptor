@@ -18,6 +18,7 @@ on:
 jobs:
   podvm:
     name: podvm
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -25,12 +26,12 @@ jobs:
         os:
           #- centos
           - ubuntu
-        arch:
-          - amd64
-          #- s390x
         provider:
           - generic
           #- vsphere
+        arch:
+          - amd64
+          #- s390x
         #exclude:
           #- os: centos
           #  arch: s390x
@@ -51,6 +52,7 @@ jobs:
         working-directory: podvm
 
       - name: Cache the qcow2 file
+        id: cache-qcow2
         uses: actions/cache/save@v3
         env:
           qcow2_path: podvm/${{ env.qcow2 }}
@@ -59,10 +61,18 @@ jobs:
             ${{ env.qcow2_path }}
           key: ${{ env.qcow2}}-${{ hashFiles(env.qcow2_path) }}
 
-  # Run libvirt e2e tests if pull request labeled 'test_e2e_libvirt'
-  e2e_libvirt:
-    name: libvirt
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
+  get_outputs:
+    runs-on: ubuntu-latest
     needs: [podvm]
-    uses: ./.github/workflows/e2e_libvirt_on_pull.yaml
-    secrets: inherit
+    steps:
+      - run: echo ${{ needs.podvm.outputs['ubuntu_generic_amd64'] }}
+
+  # Run libvirt e2e tests if pull request labeled 'test_e2e_libvirt'
+  #e2e_libvirt:
+  #  name: libvirt
+  #  if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
+  #  needs: [podvm]
+  #  uses: ./.github/workflows/e2e_libvirt_on_pull.yaml
+  #  with:
+  #    podvm_qcow2: ${{ needs.job1.outputs.output1 }}
+  #  secrets: inherit

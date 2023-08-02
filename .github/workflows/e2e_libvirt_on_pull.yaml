@@ -2,6 +2,10 @@ name: e2e libvirt on pull
 
 on:
   workflow_call:
+    inputs:
+      podvm_qcow2:
+        required: true
+        type: string
 
 jobs:
   podvm:
@@ -9,6 +13,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Restore qcow2 cache
+        uses: actions/cache/restore@v3
+        id: cache
+        with:
+          path: podvm/*
+          fail-on-cache-miss: true
+          key: foobar
 
       - name: run tests
         run: |
