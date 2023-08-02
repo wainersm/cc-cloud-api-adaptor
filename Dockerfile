@@ -31,6 +31,7 @@ FROM --platform=$TARGETPLATFORM $BASE as base-release
 FROM base-release as base-dev
 RUN dnf install -y libvirt-libs genisoimage /usr/bin/ssh && dnf clean all
 
+
 FROM base-${BUILD_TYPE}
 COPY --from=builder /work/cloud-api-adaptor /work/entrypoint.sh /usr/local/bin/
 CMD ["entrypoint.sh"]
