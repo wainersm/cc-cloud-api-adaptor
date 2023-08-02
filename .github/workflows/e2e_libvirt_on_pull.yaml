@@ -1,0 +1,11 @@
+name: e2e libvirt on pull
+
+on:
+  workflow_call:
+
+jobs:
+  podvm:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: podvm
+        run: uname -a
