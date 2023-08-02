@@ -1,0 +1,15 @@
+name: e2e libvirt on pull
+
+on:
+  workflow_call:
+
+jobs:
+  podvm:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: run tests
+        run: |
+          echo "do nothing"
