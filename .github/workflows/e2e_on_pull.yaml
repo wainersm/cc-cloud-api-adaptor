@@ -1,0 +1,23 @@
+# (C) Copyright Confidential Containers Contributors 2022.
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+name: e2e tests
+
+on:
+  pull_request:
+    types:
+      # Adding 'labeled' to the list of activity types that trigger this event
+      # (default: opened, synchronize, reopened) so that we can run this
+      # workflow when the 'ok-to-test' label is added.
+      # Reference: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+jobs:
+  e2e_libvirt:
+    name: libvirt
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
+    uses: ./.github/workflows/e2e_libvirt_on_pull.yaml
+    secrets: inherit
