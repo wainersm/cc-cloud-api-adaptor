@@ -16,8 +16,53 @@ on:
       - reopened
       - labeled
 jobs:
+  podvm:
+    name: podvm
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          #- centos
+          - ubuntu
+        arch:
+          - amd64
+          #- s390x
+        provider:
+          - generic
+          #- vsphere
+        #exclude:
+          #- os: centos
+          #  arch: s390x
+          #- provider: vsphere
+          #  arch: s390x
+          #- provider: vsphere
+          #  os: centos
+    env:
+      registry: quay.io/confidential-containers
+      podvm_image: podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}
+      qcow2: podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}.qcow2
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Extract the podvm qcow2
+        run: ./hack/download-image.sh ${{ env.registry }}/${{ env.podvm_image }} . -o ${{ env.qcow2 }}
+        working-directory: podvm
+
+      - name: Cache the qcow2 file
+        uses: actions/cache/save@v3
+        env:
+          qcow2_path: podvm/${{ env.qcow2 }}
+        with:
+          path: |
+            ${{ env.qcow2_path }}
+          key: ${{ env.qcow2}}-${{ hashFiles(env.qcow2_path) }}
+
+  # Run libvirt e2e tests if pull request labeled 'test_e2e_libvirt'
   e2e_libvirt:
     name: libvirt
     if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
+    needs: [podvm]
     uses: ./.github/workflows/e2e_libvirt_on_pull.yaml
     secrets: inherit
