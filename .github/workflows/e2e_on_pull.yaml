@@ -1,0 +1,15 @@
+# (C) Copyright Confidential Containers Contributors 2022.
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+name: e2e
+
+on:
+  pull_request:
+
+jobs:
+  e2e_libvirt:
+    name: e2e libvirt
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
+    uses: ./.github/workflows/e2e_libvirt_on_pull.yaml
+    secrets: inherit
