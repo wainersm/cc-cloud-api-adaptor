@@ -1,7 +1,14 @@
-name: e2e libvirt on pull
+name: e2e libvirt
 
 on:
   workflow_call:
+    inputs:
+      #podvm_qcow2:
+      #  required: true
+      #  type: string
+      qcow2_artifact:
+        required: true
+        type: string
 
 jobs:
   podvm:
@@ -10,6 +17,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.qcow2_artifact }}
+          path: podvm
       - name: run tests
         run: |
-          echo "do nothing"
+          ls podvm
