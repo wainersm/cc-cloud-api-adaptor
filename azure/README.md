@@ -7,6 +7,7 @@ and finally deploy a sample application that will run as a pod backed by CAA
 pod VM.
 
 
+
 ## Pre-requisites
 
 ### Resource Group
