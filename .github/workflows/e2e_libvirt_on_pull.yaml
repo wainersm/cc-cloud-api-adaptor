@@ -34,6 +34,52 @@ jobs:
           name: ${{ inputs.install_directory_artifact }}
           path: install
 
+      - name: Setup node
+        run: |
+          set -e
+          set -o pipefail
+
+          apt-get install -y qemu-kvm libvirt-daemon-system
+          #kvm-ok
+          # Create the default storage pool if not defined.
+          if ! virsh pool-list --all | grep default >/dev/null; then
+            virsh pool-define-as default dir - - - - "/var/lib/libvirt/images"
+            virsh pool-build default
+          fi
+          virsh pool-start default || true
+
+          curl https://raw.githubusercontent.com/karmab/kcli/main/install.sh | bash
+
+        # This is the key used by cloud-api-adaptor to connect to libvirt
+      - name: Generate the SSH key
+        run: |
+          set -e
+
+          ssh-keygen -f ./id_rsa -N ""
+          mkdir -p ~/.ssh
+          cat id_rsa.pub >> ~/.ssh/authorized_keys
+          chmod 600 ~/.ssh/authorized_keys
+        working-directory: install/overlays/libvirt
+
+      - name: Verify the connection with Libvirt
+        id: verify_libvirt_connection
+        run: |
+          set -e
+
+          IP="$(hostname -I | cut -d' ' -f1)"
+          echo "ip=${IP}" >> $GITHUB_OUTPUT
+
+          virsh -c "qemu+ssh://$USER@${IP}/system?keyfile=$(pwd)/id_rsa&no_verify=1" nodeinfo
+        working-directory: install/overlays/libvirt
+
+      - name: Create the e2e properties file
+        run: |
+          IP=${{ steps.verify_libvirt_connection.outputs.ip }}
+          echo "libvirt_uri=\"qemu+ssh://$USER@${IP}/system?no_verify=1\"" >> libvirt.properties
+          echo "libvirt_ssh_key_file=\"id_rsa\"" >> libvirt.properties
+          # For debugging
+          cat libvirt.properties
+
       - name: run tests
         run: |
           ls podvm
