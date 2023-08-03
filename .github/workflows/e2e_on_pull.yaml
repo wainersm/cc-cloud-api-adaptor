@@ -57,6 +57,16 @@ jobs:
           path: podvm/${{ env.qcow2 }}
           retention-days: 1
 
+  image:
+    name: image
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
+    uses: ./.github/workflows/caa_build_and_push.yaml
+    with:
+      registry: ghcr.io/${{ github.repository_owner }}
+      dev_tags: ci-pr${{ github.event.number  }}-dev
+      release_tags: ci-pr${{ github.event.number  }}
+    secrets: inherit
+
   # Run libvirt e2e tests if pull request labeled 'test_e2e_libvirt'
   e2e_libvirt:
     name: libvirt
