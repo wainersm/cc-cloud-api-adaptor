@@ -58,14 +58,50 @@ jobs:
           retention-days: 1
 
   image:
-    name: image
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
-    uses: ./.github/workflows/caa_build_and_push.yaml
-    with:
-      registry: ghcr.io/${{ github.repository_owner }}
-      dev_tags: ci-pr${{ github.event.number  }}-dev
-      release_tags: ci-pr${{ github.event.number  }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    env:
+      # IMPORTANT: If you are enabling e2e tests for a given provider,
+      # then please update this list (space-separated list, e.g., "aws libvirt").
+      PROVIDERS: "libvirt"
+      REGISTRY: ghcr.io/${{ github.repository_owner }}
+      BASE_TAG: ci-pr${{ github.event.number  }}
+    steps:
+      - name: image build and push
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') }}
+        uses: ./.github/workflows/caa_build_and_push.yaml
+        with:
+          registry: ${{ env.REGISTRY }}
+          dev_tags: ${{ env.BASE_TAG }}-dev
+          release_tags: ${{ env.BASE_TAG }}
+          secrets: inherit
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | \
+            bash -s /usr/local/bin
+
+      - name: Update kustomization configuration
+        run: |
+          set -e
+          providers=(${{ env.PROVIDERS }})
+          # If there aren't providers then something is wrong
+          [[ ${#providers[@]} -gt 0 ]] || exit 1
+
+          for provider in ${providers[@]}; do
+            img="${{ env.REGISTRY }}/cloud-api-adaptor"
+            tag=${{ env.BASE_TAG }}
+            [[ "$provider" = "libvirt" ]] && tag+="-dev"
+            echo "::group::Update ${provider}"
+            pushd "install/overlays/${provider}"
+            kustomize edit set image "cloud-api-adaptor=${img}:${tag}"
+            # Print for debugging
+            cat kustomization.yaml
+            echo "::endgroup::"
+            # Validate the file to avoid it silently testing with a wrong image
+            grep "newName: ${img}" kustomization.yaml
+            grep "newTag: ${tag}" kustomization.yaml
+            popd
+          done
 
   # Run libvirt e2e tests if pull request labeled 'test_e2e_libvirt'
   e2e_libvirt:
