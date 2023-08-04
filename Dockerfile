@@ -9,6 +9,7 @@ ARG BASE=fedora:36
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
 FROM --platform=$BUILDPLATFORM $BUILDER_BASE as builder-release
 
+
 FROM builder-release as builder-dev
 RUN dnf install -y libvirt-devel && dnf clean all
 
