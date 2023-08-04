@@ -1,6 +1,6 @@
 # Cloud API Adaptor on Azure
 
-This documentation will walk you through setting up Cloud API Adaptor (CAA) on
+This documentation will walk you through  setting up Cloud API Adaptor (CAA) on
 Azure Kubernetes Service (AKS). We will build the pod vm image, CAA's
 application image, deploy one worker AKS, deploy CAA on that Kubernetes cluster
 and finally deploy a sample application that will run as a pod backed by CAA
