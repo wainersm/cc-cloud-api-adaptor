@@ -47,6 +47,7 @@ func GenerateInstanceName(podName, sandboxID string, podvmNameMax int) string {
 	return instanceName
 }
 
+// GetPodName get the pod name
 func GetPodName(annotations map[string]string) string {
 
 	sandboxName := annotations[cri.SandboxName]
