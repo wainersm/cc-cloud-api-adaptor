@@ -56,8 +56,7 @@ jobs:
           echo "::endgroup::"
 
           sudo adduser "$USER" libvirt || true
-          # Re-login to load the new libvirt group
-          sudo -i -u "$USER"
+          sudo setfacl -m "u:${USER}:rwx" /var/lib/libvirt/images
 
       - name: Install kcli
         run: |
@@ -73,11 +72,16 @@ jobs:
           [ -f ~/.ssh/id_rsa ] || \
             ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ""
 
+          # Re-login to load the new libvirt group
+          echo "test"
+          #newgrp libvirt || true
+          groups
+
           # Newest version of kcli does not index old Ubuntu images like 20.04
           echo "::group::Download Ubuntu 20.04 image"
-          sudo setfacl -m "u:${USER}:rwx" /var/lib/libvirt/images
           kcli download image -u https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img ubuntu2004
           echo "::endgroup::"
+        shell: bash -l -eo pipefail {0}
 
         # This is the key used by cloud-api-adaptor to connect to libvirt
       - name: Generate the SSH key
@@ -130,3 +134,4 @@ jobs:
           export TEST_E2E_TIMEOUT="50m"
 
           make test-e2e
+        shell: bash -l -eo pipefail {0}
