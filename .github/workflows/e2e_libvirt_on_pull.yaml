@@ -74,6 +74,8 @@ jobs:
 
           # Re-login to load the new libvirt group
           echo "test"
+          #newgrp libvirt || true
+          groups
 
           # Newest version of kcli does not index old Ubuntu images like 20.04
           echo "::group::Download Ubuntu 20.04 image"
