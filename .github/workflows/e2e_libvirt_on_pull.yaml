@@ -56,8 +56,7 @@ jobs:
           echo "::endgroup::"
 
           sudo adduser "$USER" libvirt || true
-          # Re-login to load the new libvirt group
-          sudo -i -u "$USER"
+          sudo setfacl -m "u:${USER}:rwx" /var/lib/libvirt/images
 
       - name: Install kcli
         run: |
@@ -73,9 +72,11 @@ jobs:
           [ -f ~/.ssh/id_rsa ] || \
             ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ""
 
+          # Re-login to load the new libvirt group
+          sudo -i -u "$USER"
+
           # Newest version of kcli does not index old Ubuntu images like 20.04
           echo "::group::Download Ubuntu 20.04 image"
-          sudo setfacl -m "u:${USER}:rwx" /var/lib/libvirt/images
           kcli download image -u https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img ubuntu2004
           echo "::endgroup::"
 
@@ -124,6 +125,9 @@ jobs:
 
       - name: run tests
         run: |
+          # Re-login to load the new libvirt group
+          sudo -i -u "$USER"
+
           export TEST_PROVISION="yes"
           export TEST_PROVISION_FILE="$PWD/libvirt.properties"
           export TEST_PODVM_IMAGE="${PWD}/podvm/${{ inputs.qcow2_artifact }}"
