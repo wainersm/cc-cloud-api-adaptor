@@ -1,0 +1,3 @@
+resources:
+    - caa-pod.yaml
+    - ../rbac

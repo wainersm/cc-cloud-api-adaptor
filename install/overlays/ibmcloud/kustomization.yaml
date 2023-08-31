@@ -1,0 +1,71 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+- ../../yamls
+
+images:
+- name: cloud-api-adaptor
+  newName: quay.io/confidential-containers/cloud-api-adaptor # change image if needed
+  newTag: latest
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: peer-pods-cm
+  namespace: confidential-containers-system
+  literals:
+  - CLOUD_PROVIDER="ibmcloud"
+  - IBMCLOUD_VPC_ENDPOINT="" #set
+  - IBMCLOUD_RESOURCE_GROUP_ID="" #set
+  - IBMCLOUD_SSH_KEY_ID="" #set
+  - IBMCLOUD_PODVM_IMAGE_ID="" #set
+  - IBMCLOUD_PODVM_INSTANCE_PROFILE_NAME="" #set
+  - IBMCLOUD_PODVM_INSTANCE_PROFILE_LIST="" #optional, comma separated list
+  - IBMCLOUD_ZONE="" #set
+  - IBMCLOUD_VPC_SUBNET_ID="" #set
+  - IBMCLOUD_VPC_SG_ID="" #set
+  - IBMCLOUD_VPC_ID="" #set
+  - CRI_RUNTIME_ENDPOINT="/run/cri-runtime/containerd.sock"
+  #- PAUSE_IMAGE="" # Uncomment and set if you want to use a specific pause image
+  #- VXLAN_PORT="" # Uncomment and set if you want to use a specific vxlan port. Defaults to 4789
+##TLS_SETTINGS
+  #- CACERT_FILE="/etc/certificates/ca.crt" # for TLS
+  #- CERT_FILE="/etc/certificates/client.crt" # for TLS
+  #- CERT_KEY="/etc/certificates/client.key" # for TLS
+  #- TLS_SKIP_VERIFY="" # for testing only
+##TLS_SETTINGS
+
+secretGenerator:
+- name: auth-json-secret
+  namespace: confidential-containers-system
+  files:
+  #- auth.json # set - path to auth.json pull credentials file
+- name: peer-pods-secret
+  namespace: confidential-containers-system
+  literals:
+##IAM PROFILE SETTINGS
+  - IBMCLOUD_IAM_PROFILE_ID="" # set
+##/IAM PROFILE SETTINGS
+  - IBMCLOUD_API_KEY="" # set if not using IAM profile ID
+  - IBMCLOUD_IAM_ENDPOINT="" #set
+  - IBMCLOUD_ZONE="" #set
+##TLS_SETTINGS
+#- name: certs-for-tls
+#  namespace: confidential-containers-system
+#  files:
+#  - <path_to_ca.crt> # set - relative path to ca.crt, located either in the same folder as the kustomization.yaml file or within a subfolder
+#  - <path_to_client.crt> # set - relative path to client.crt, located either in the same folder as the kustomization.yaml file or within a subfolder
+#  - <path_to_client.key> # set - relative path to client.key, located either in the same folder as the kustomization.yaml file or within a subfolder
+##TLS_SETTINGS
+
+patchesStrategicMerge:
+  - cri_runtime_endpoint.yaml # set (modify host's runtime cri socket path in the file, default is /run/containerd/containerd.sock)
+  - kata_direct_volumes_mount.yaml # set (for volumes/csi-wrapper)
+##IAM PROFILE SETTINGS
+  - cr_token_projection.yaml
+##/IAM PROFILE SETTINGS
+##TLS_SETTINGS
+# - tls_certs_volume_mount.yaml # set (for tls)
+##TLS_SETTINGS
