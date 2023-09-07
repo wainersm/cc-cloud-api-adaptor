@@ -25,6 +25,16 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
+    - name: Parse versions.yaml
+      run: |
+        echo "GO_VERSION=$(yq r versions.yaml 'tools.golang')" >> $GITHUB_ENV
+        echo "PROTOC_VERSION=$(yq r versions.yaml 'tools.protoc')" >> $GITHUB_ENV
+        echo "RUST_VERSION=$(yq r versions.yaml 'tools.rust')" >> $GITHUB_ENV
+        echo "CAA_SRC=$(yq r versions.yaml 'git.cloud-api-adaptor.url')" >> $GITHUB_ENV
+        echo "CAA_SRC_REF=$(yq r versions.yaml 'git.cloud-api-adaptor.reference')" >> $GITHUB_ENV
+        echo "KATA_SRC=$(yq r versions.yaml 'git.kata-containers.url')" >> $GITHUB_ENV
+        echo "KATA_SRC_BRANCH=$(yq r versions.yaml 'git.kata-containers.reference')" >> $GITHUB_ENV
+
     #- name: Set up QEMU
     #  uses: docker/setup-qemu-action@v2
 
@@ -57,10 +67,10 @@ jobs:
         file: |
           podvm/${{ matrix.dockerfile }}
         build-args: |
-          "GO_VERSION=1.20.7"
-          "PROTOC_VERSION=3.11.4"
-          "RUST_VERSION=1.69.0"
-          "CAA_SRC=https://github.com/confidential-containers/cloud-api-adaptor"
-          "CAA_SRC_REF=main"
-          "KATA_SRC=https://github.com/kata-containers/kata-containers"
-          "KATA_SRC_BRANCH=CCv0"
+          "GO_VERSION=${{ env.GO_VERSION }}"
+          "PROTOC_VERSION=${{ env.PROTOC_VERSION }}"
+          "RUST_VERSION=${{ env.RUST_VERSION }}"
+          "CAA_SRC=${{ env.CAA_SRC }}"
+          "CAA_SRC_REF=${{ env.CAA_SRC_REF }}"
+          "KATA_SRC=${{ env.KATA_SRC }}"
+          "KATA_SRC_BRANCH=${{ env.KATA_SRC_BRANCH }}"
