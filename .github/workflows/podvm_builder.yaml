@@ -74,10 +74,6 @@ jobs:
 
         echo "IMG_TAGS=$tags" >> "$GITHUB_ENV"
 
-    - name: Determine image tags
-      run: |
-        img="${{ inputs.registry }}/podvm-builder-${{ matrix.os }}"
-
     - name: Build and push
       uses: docker/build-push-action@v3
       with:
