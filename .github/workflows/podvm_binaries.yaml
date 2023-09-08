@@ -1,6 +1,11 @@
 name: Create Pod VM Binaries Image
 on:
   workflow_call:
+    inputs:
+      registry:
+        default: 'quay.io/confidential-containers'
+        required: false
+        type: string
 
 jobs:
   build:
@@ -47,8 +52,8 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         tags: |
-          quay.io/confidential-containers/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:latest
-          quay.io/confidential-containers/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:${{ github.sha }}
+          ${{ inputs.registry }}/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:latest
+          ${{ inputs.registry }}/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:${{ github.sha }}
         push: true
         context: podvm
         platforms: linux/amd64

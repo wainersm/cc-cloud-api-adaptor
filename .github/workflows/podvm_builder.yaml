@@ -1,6 +1,11 @@
 name: Create Pod VM Builder Image
 on:
   workflow_call:
+    inputs:
+      registry:
+        default: 'quay.io/confidential-containers'
+        required: false
+        type: string
 
 jobs:
   build:
@@ -58,8 +63,8 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         tags: |
-          quay.io/confidential-containers/podvm-builder-${{ matrix.os }}:latest
-          quay.io/confidential-containers/podvm-builder-${{ matrix.os }}:${{ github.sha }}
+          ${{ inputs.registry }}/podvm-builder-${{ matrix.os }}:latest
+          ${{ inputs.registry }}/podvm-builder-${{ matrix.os }}:${{ github.sha }}
         push: true
         context: podvm
         platforms: linux/amd64

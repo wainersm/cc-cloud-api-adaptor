@@ -1,6 +1,11 @@
 name: Create Pod VM Image
 on:
   workflow_call:
+    inputs:
+      registry:
+        default: 'quay.io/confidential-containers'
+        required: false
+        type: string
 
 jobs:
   build:
@@ -45,8 +50,8 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         tags: |
-          quay.io/confidential-containers/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:latest
-          quay.io/confidential-containers/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:${{ github.sha }}
+          ${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:latest
+          ${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:${{ github.sha }}
         push: true
         context: podvm
         platforms: linux/amd64
@@ -57,4 +62,4 @@ jobs:
           "ARCH=${{ matrix.arch }}"
           "UBUNTU_IMAGE_URL="
           "UBUNTU_IMAGE_CHECKSUM="
-          "BINARIES_IMG=quay.io/confidential-containers/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}"
+          "BINARIES_IMG=${{ inputs.registry }}/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}"
