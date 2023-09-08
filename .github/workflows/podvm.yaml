@@ -2,6 +2,10 @@ name: Create Pod VM Image
 on:
   workflow_call:
     inputs:
+      binaries_img_tag:
+        default: 'latest'
+        required: false
+        type: string
       registry:
         default: 'quay.io/confidential-containers'
         required: false
@@ -74,4 +78,4 @@ jobs:
           "ARCH=${{ matrix.arch }}"
           "UBUNTU_IMAGE_URL="
           "UBUNTU_IMAGE_CHECKSUM="
-          "BINARIES_IMG=${{ inputs.registry }}/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}"
+          "BINARIES_IMG=${{ inputs.registry }}/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:${{ inputs.binaries_img_tag }}"
