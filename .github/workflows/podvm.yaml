@@ -45,13 +45,25 @@ jobs:
         registry: quay.io
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
+    - name: Determine image tags
+      run: |
+        event_name=${{ github.event_name }}
+        img="${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}"
+        tags=""
+
+        case "$event_name" in
+        release)
+          tags="${img}:latest,${img}:${{ github.sha }}" ;;
+        pull_request|pull_request_target)
+          tags="${img}:ci-pr${{ github.event.number }}" ;;
+        esac
+
+        echo "IMG_TAGS=$tags" >> "$GITHUB_ENV"
 
     - name: Build and push
       uses: docker/build-push-action@v3
       with:
-        tags: |
-          ${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:latest
-          ${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:${{ github.sha }}
+        tags: ${{ env.IMG_TAGS }}
         push: true
         context: podvm
         platforms: linux/amd64
