@@ -59,6 +59,10 @@ jobs:
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
 
+    - name: Determine image tags
+      run: |
+        img="${{ inputs.registry }}/podvm-builder-${{ matrix.os }}"
+
     - name: Build and push
       uses: docker/build-push-action@v3
       with:
