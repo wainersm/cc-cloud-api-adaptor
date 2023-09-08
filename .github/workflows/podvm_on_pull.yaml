@@ -1,0 +1,17 @@
+name: podvm_on_pull
+on:
+  pull_request:
+
+jobs:
+  podvm_builder:
+    uses: ./.github/workflows/podvm_builder.yaml
+    with:
+      registry: ghcr.io/${{ github.repository_owner }}
+    secrets: inherit
+  podvm_binaries:
+    needs: [podvm_builder]
+    uses: ./.github/workflows/podvm_binaries.yaml
+    with:
+      registry: ghcr.io/${{ github.repository_owner }}
+      builder_img_tag: ci-pr${{ github.event.number }}
+    secrets: inherit
