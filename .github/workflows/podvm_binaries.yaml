@@ -87,6 +87,6 @@ jobs:
           podvm/${{ matrix.dockerfile }}
         build-args: |
           "ARCH=${{ matrix.arch }}"
-          "BUILDER_IMG=quay.io/confidential-containers/podvm-builder-${{ matrix.os }}:${{ inputs.builder_img_tag }}"
+          "BUILDER_IMG=${{ inputs.registry }}/podvm-builder-${{ matrix.os }}:${{ inputs.builder_img_tag }}"
           "UBUNTU_IMAGE_URL="
           "UBUNTU_IMAGE_CHECKSUM="
