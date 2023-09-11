@@ -70,7 +70,7 @@ RUN if [ -n "${CAA_SRC}" ]; then \
     if [ -n "${CAA_SRC_REF}" ]; then \
       cd cloud-api-adaptor && \
       git fetch origin ${CAA_SRC_REF} && \
-      git checkout FETCH_HEAD -b ${CAA_SRC_REF} ;\
+      git checkout FETCH_HEAD -B ${CAA_SRC_REF} ;\
     fi
 RUN git clone ${KATA_SRC} kata-containers
 RUN cd kata-containers && git checkout ${KATA_SRC_BRANCH}
