@@ -13,7 +13,7 @@ jobs:
     needs: [podvm_builder]
     uses: ./.github/workflows/podvm_binaries.yaml
     with:
-      caa_src_ref: ${{ github.event.pull_request.head.sha }}
+      #caa_src_ref: ${{ github.event.pull_request.head.sha }}
       registry: ghcr.io/${{ github.repository_owner }}
       builder_img_tag: ci-pr${{ github.event.number }}
     secrets: inherit
@@ -21,7 +21,7 @@ jobs:
     needs: [podvm_binaries]
     uses: ./.github/workflows/podvm.yaml
     with:
-      caa_src_ref: ${{ github.event.pull_request.head.sha }}
+      #caa_src_ref: ${{ github.event.pull_request.head.sha }}
       registry: ghcr.io/${{ github.repository_owner }}
       binaries_img_tag: ci-pr${{ github.event.number }}
     secrets: inherit
