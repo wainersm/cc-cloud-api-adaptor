@@ -10,6 +10,10 @@ on:
         default: 'latest'
         required: false
         type: string
+      caa_src_ref:
+        default: ''
+        required: false
+        type: string
       registry:
         default: 'quay.io/confidential-containers'
         required: false
@@ -40,6 +44,19 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ inputs.caa_src_ref }}
+
+    - name: Read properties from versions.yaml
+      run: |
+        # There reference to CAA sources will honored if passed to this
+        # workflow via inputs.
+        caa_src_ref="${{ inputs.caa_src_ref }}"
+        [ -n "$caa_src_ref" ] || \
+          caa_src_ref="$(yq '.git.cloud-api-adaptor.reference' versions.yaml)"
+        [ -n "$caa_src_ref" ]
+        echo "CAA_SRC_REF=${caa_src_ref}" >> $GITHUB_ENV
 
     #- name: Set up QEMU
     #  uses: docker/setup-qemu-action@v2
@@ -94,3 +111,4 @@ jobs:
           "UBUNTU_IMAGE_CHECKSUM="
           "BINARIES_IMG=${{ inputs.registry }}/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:${{ inputs.binaries_img_tag }}"
           "BUILDER_IMG=${{ inputs.registry }}/podvm-builder-${{ matrix.os }}:${{ inputs.builder_img_tag }}"
+          "CAA_SRC_REF=${{ env.CAA_SRC_REF }}"
