@@ -2,6 +2,10 @@ name: Create Pod VM Builder Image
 on:
   workflow_call:
     inputs:
+      caa_src_ref:
+        default: ''
+        required: false
+        type: string
       registry:
         default: 'quay.io/confidential-containers'
         required: false
@@ -28,6 +32,9 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ inputs.caa_src_ref }}
 
     - name: Read properties from versions.yaml
       run: |
@@ -47,7 +54,11 @@ jobs:
         [ -n "$caa_src" ]
         echo "CAA_SRC=${caa_src}" >> $GITHUB_ENV
 
-        caa_src_ref="$(yq '.git.cloud-api-adaptor.reference' versions.yaml)"
+        # There reference to CAA sources will honored if passed to this
+        # workflow via inputs.
+        caa_src_ref="${{ inputs.caa_src_ref }}"
+        [ -n "$caa_src_ref" ] || \
+          caa_src_ref="$(yq '.git.cloud-api-adaptor.reference' versions.yaml)"
         [ -n "$caa_src_ref" ]
         echo "CAA_SRC_REF=${caa_src_ref}" >> $GITHUB_ENV
 
