@@ -27,7 +27,7 @@ env:
 
 jobs:
   test:
-    runs-on: az-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
