@@ -7,7 +7,7 @@ virtualization support.
 ## Goals
 
 * Accept requests from Kata shim to create/delete Kata VM instances without requiring nested virtualization support.
-* Manage VM instances in the cloud to run pods using cloud (virtualization) provider APIs
+* Manage VM instances in the cloud to run pods using cloud (virtualizajlktion) provider APIs
 * Forward communication between kata shim on a worker node VM and kata agent on a pod VM
 * Provide a mechanism to establish a network tunnel between a worker and pod VMs to Kubernetes pod network
 
