@@ -2,6 +2,10 @@ name: Create Pod VM Image
 on:
   workflow_call:
     inputs:
+      builder_img_tag:
+        default: 'latest'
+        required: false
+        type: string
       binaries_img_tag:
         default: 'latest'
         required: false
@@ -106,4 +110,5 @@ jobs:
           "UBUNTU_IMAGE_URL="
           "UBUNTU_IMAGE_CHECKSUM="
           "BINARIES_IMG=${{ inputs.registry }}/podvm-binaries-${{ matrix.os }}-${{ matrix.arch }}:${{ inputs.binaries_img_tag }}"
+          "BUILDER_IMG=${{ inputs.registry }}/podvm-builder-${{ matrix.os }}:${{ inputs.builder_img_tag }}"
           "CAA_SRC_REF=${{ env.CAA_SRC_REF }}"

@@ -67,6 +67,7 @@ jobs:
       caa_src_ref: ${{ github.event.pull_request.head.sha }}
       registry: ghcr.io/${{ github.repository_owner }}
       binaries_img_tag: ci-pr${{ github.event.number }}
+      builder_img_tag: ci-pr${{ github.event.number }}
     secrets: inherit
 
   # Build and push the cloud-api-adaptor image
