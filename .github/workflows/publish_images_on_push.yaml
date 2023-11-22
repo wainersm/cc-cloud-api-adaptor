@@ -17,11 +17,13 @@ jobs:
     uses: ./.github/workflows/caa_build_and_push_per_arch.yaml
     with:
       git_ref: ${{ github.sha }}
+      registry: ghcr.io/${{ github.repository_owner }}
     secrets: inherit
 
   csi-wrapper:
     uses: ./.github/workflows/csi_wrapper_images.yaml
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tags: latest,${{ github.sha }}
       git_ref: ${{ github.sha }}
     secrets: inherit
@@ -29,6 +31,7 @@ jobs:
   peerpod-ctrl:
     uses: ./.github/workflows/peerpod-ctrl_image.yaml
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tags: latest,${{ github.sha }}
       git_ref: ${{ github.sha }}
     secrets: inherit
@@ -36,6 +39,7 @@ jobs:
   peerpodconfig-ctrl:
     uses: ./.github/workflows/peerpodconfig-ctrl_image.yaml
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tags: ${{ github.sha }},latest
       git_ref: ${{ github.sha }}
     secrets: inherit
@@ -43,6 +47,7 @@ jobs:
   webhook:
     uses: ./.github/workflows/webhook_image.yaml
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tags: ${{ github.sha }},latest
       git_ref: ${{ github.sha }}
     secrets: inherit
