@@ -14,6 +14,7 @@ jobs:
     with:
       dev_tags: ${{ github.event.release.tag_name }}-dev
       release_tags: ${{ github.event.release.tag_name }}
+      registry: ghcr.io/${{ github.repository_owner }}
       git_ref: ${{ github.ref }}
     secrets: inherit
 
@@ -21,6 +22,7 @@ jobs:
     uses: ./.github/workflows/csi_wrapper_images.yaml
     with:
       image_tags: ${{ github.event.release.tag_name }}
+      registry: ghcr.io/${{ github.repository_owner }}
       git_ref: ${{ github.ref }}
     secrets: inherit
 
@@ -28,6 +30,7 @@ jobs:
     uses: ./.github/workflows/peerpod-ctrl_image.yaml
     with:
       image_tags: ${{ github.event.release.tag_name }}
+      registry: ghcr.io/${{ github.repository_owner }}
       git_ref: ${{ github.ref }}
     secrets: inherit
 
@@ -35,6 +38,7 @@ jobs:
     uses: ./.github/workflows/peerpodconfig-ctrl_image.yaml
     with:
       image_tags: ${{ github.event.release.tag_name }}
+      registry: ghcr.io/${{ github.repository_owner }}
       git_ref: ${{ github.ref }}
     secrets: inherit
 
@@ -42,6 +46,7 @@ jobs:
     uses: ./.github/workflows/podvm_builder.yaml
     with:
       image_tag: ${{ github.event.release.tag_name }}
+      registry: ghcr.io/${{ github.repository_owner }}
       git_ref: ${{ github.ref }}
     secrets: inherit
 
@@ -49,6 +54,7 @@ jobs:
     needs: [podvm_builder]
     uses: ./.github/workflows/podvm_binaries.yaml
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tag: ${{ github.event.release.tag_name }}
       git_ref: ${{ github.ref }}
     secrets: inherit
@@ -57,6 +63,7 @@ jobs:
     needs: [podvm_binaries]
     uses: ./.github/workflows/podvm.yaml
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tag: ${{ github.event.release.tag_name }}
       git_ref: ${{ github.ref }}
     secrets: inherit
@@ -65,5 +72,6 @@ jobs:
     uses: ./.github/workflows/webhook_image.yaml
     with:
       image_tags: ${{ github.event.release.tag_name }}
+      registry: ghcr.io/${{ github.repository_owner }}
       git_ref: ${{ github.ref }}
     secrets: inherit
