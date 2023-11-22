@@ -1,0 +1,18 @@
+# (C) Copyright Confidential Containers Contributors 2023.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Build and push project images on pull requests merged.
+---
+name: Publish project images
+
+on:
+  push:
+    branches:
+      - 'main'
+
+  workflow_dispatch:
+
+jobs:
+  caa:
+    uses: ./.github/workflows/caa_build_and_push_per_arch.yaml
+    secrets: inherit
