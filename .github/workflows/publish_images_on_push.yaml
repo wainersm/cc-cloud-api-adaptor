@@ -30,6 +30,7 @@ jobs:
     uses: ./.github/workflows/caa_build_and_push_per_arch.yaml
     with:
       git_ref: ${{ github.sha }}
+      registry: ghcr.io/${{ github.repository_owner }}
     secrets: inherit
 
   csi-wrapper:
@@ -40,6 +41,7 @@ jobs:
       (github.event_name == 'push' &&
       contains(needs.get_changed_files.outputs.changed_files, 'volumes/csi-wrapper/'))
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tags: latest,${{ github.sha }}
       git_ref: ${{ github.sha }}
     secrets: inherit
@@ -52,6 +54,7 @@ jobs:
       (github.event_name == 'push' &&
       contains(needs.get_changed_files.outputs.changed_files, 'peerpod-ctrl/'))
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tags: latest,${{ github.sha }}
       git_ref: ${{ github.sha }}
     secrets: inherit
@@ -64,6 +67,7 @@ jobs:
       (github.event_name == 'push' &&
       contains(needs.get_changed_files.outputs.changed_files, 'peerpodconfig-ctrl/'))
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tags: ${{ github.sha }},latest
       git_ref: ${{ github.sha }}
     secrets: inherit
@@ -76,6 +80,7 @@ jobs:
       (github.event_name == 'push' &&
       contains(needs.get_changed_files.outputs.changed_files, 'webhook/'))
     with:
+      registry: ghcr.io/${{ github.repository_owner }}
       image_tags: ${{ github.sha }},latest
       git_ref: ${{ github.sha }}
     secrets: inherit
