@@ -1,5 +1,5 @@
 # Introduction
-This mutating webhook modifies a POD spec using specific runtimeclass to remove all `resources` entries and replace it with peer-pod extended resource.
+This mutating webhook modifies a pod spec using specific runtimeclass to remove all `resources` entries and replace it with peer-pod extended resource.
 
 ## Need for mutating webhook
 A peer-pod uses resources at two places:

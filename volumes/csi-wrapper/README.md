@@ -1,5 +1,5 @@
 # csi-wrapper
-CSI Wrapper for Peer Pod Storage
+A CSI Wrapper for Peer Pod Storage
 
 ## High Level Design
 
