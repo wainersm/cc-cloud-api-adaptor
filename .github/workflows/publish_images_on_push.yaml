@@ -55,3 +55,15 @@ jobs:
       image_tags: ${{ github.sha }},latest
       git_ref: ${{ github.sha }}
     secrets: inherit
+
+  webhook:
+    needs: [get_changed_files]
+    uses: ./.github/workflows/webhook_image.yaml
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+      contains(needs.get_changed_files.outputs.changed_files, 'webhook/'))
+    with:
+      image_tags: ${{ github.sha }},latest
+      git_ref: ${{ github.sha }}
+    secrets: inherit
