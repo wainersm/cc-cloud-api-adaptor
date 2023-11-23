@@ -1,5 +1,5 @@
 # peerpod-ctrl
-The PeerPod CR is used to track the cloud provider resources for a (peer)Pod; it requires the cloud InstanceID and the CloudProvider. PeerPod objects are owned by the matching Pod object.
+The PeerPod Controller is used to track the cloud provider resources for a (peer)Pod; it requires the cloud InstanceID and the CloudProvider. PeerPod objects are owned by the matching Pod object.
 The PeerPod controller is watching PeerPod events and deleting dangling resources that were not deleted by the cloud-api-adaptor at Pod deletion time.
 
 ## Description

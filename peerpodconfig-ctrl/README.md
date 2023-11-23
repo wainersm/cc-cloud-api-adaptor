@@ -1,5 +1,5 @@
 # peerpodconfig-ctrl
-peerpodconfig-ctrl is a kubernetes controller which is responsible for
+peerpodconfig-ctrl is a Kubernetes controller which is responsible for
 watching the PeerPodConfig CRD object and manages the creation and deletion
 lifecycle of all required components to run peer pods.
 
