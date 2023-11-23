@@ -28,3 +28,15 @@ jobs:
       image_tags: latest,${{ github.sha }}
       git_ref: ${{ github.sha }}
     secrets: inherit
+
+  peerpodconfig-ctrl:
+    uses: ./.github/workflows/peerpodconfig-ctrl_image.yaml
+    if: >
+      github.event_name == 'push' && (
+      contains(github.event.push.commits.added, 'peerpodconfig-ctrl/') ||
+      contains(github.event.push.commits.modified, 'peerpodconfig-ctrl/') ||
+      contains(github.event.push.commits.removed, 'peerpodconfig-ctrl/'))
+    with:
+      image_tags: ${{ github.sha }},latest
+      git_ref: ${{ github.sha }}
+    secrets: inherit
