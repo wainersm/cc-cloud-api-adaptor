@@ -8,11 +8,6 @@ name: (Callable) Run all e2e tests
 on:
   workflow_call:
     inputs:
-      authorized:
-        default: false
-        description: Pre-authorize the workflow execution
-        required: false
-        type: boolean
       caa_image_tag:
         description: set the cloud-api-adaptor image tag
         required: true
@@ -39,18 +34,9 @@ env:
   E2E_IMG_DEV_TAG: ${{ inputs.caa_image_tag }}-dev
 
 jobs:
-  authorize:
-    runs-on: ubuntu-latest
-    if: |
-      inputs.authorized == true ||
-      contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt')
-    steps:
-      - run: "true"
-
   # Build the podvm images.
   #
   podvm_builder:
-    needs: [authorize]
     uses: ./.github/workflows/podvm_builder.yaml
     with:
       registry: ${{ inputs.registry }}
@@ -91,7 +77,6 @@ jobs:
   #
   image:
     uses: ./.github/workflows/caa_build_and_push.yaml
-    needs: [authorize]
     with:
       registry: ${{ inputs.registry }}
       dev_tags: ${{ inputs.caa_image_tag }}-dev
@@ -157,7 +142,8 @@ jobs:
   libvirt:
     name: libvirt
     if: |
-      inputs.authorized == true ||
+      github.event_name == 'scheduled' ||
+      github.event_name == 'workflow_dispatch' ||
       contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt')
     needs: [podvm, image, prep_install]
     strategy:

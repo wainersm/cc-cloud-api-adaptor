@@ -27,8 +27,14 @@ on:
       - 'main'
 
 jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt')
+    steps:
+      - run: "true"
   e2e:
     uses: ./.github/workflows/e2e_run_all.yaml
+    needs: [authorize]
     with:
       caa_image_tag: ci-pr${{ github.event.number }}
       git_ref: ${{ github.event.pull_request.head.sha }}
