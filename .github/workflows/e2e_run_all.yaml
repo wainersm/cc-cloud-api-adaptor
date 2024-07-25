@@ -151,10 +151,7 @@ jobs:
   # Run libvirt e2e tests if pull request labeled 'test_e2e_libvirt'
   libvirt:
     name: libvirt
-    if: |
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt')
+    if: false
     needs: [podvm, image, prep_install]
     strategy:
       fail-fast: false

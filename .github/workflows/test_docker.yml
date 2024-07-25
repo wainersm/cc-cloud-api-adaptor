@@ -1,0 +1,13 @@
+---
+name: test docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    uses: ./.github/workflows/e2e_docker.yaml
+    with:
+      podvm_image: ghcr.io/wainersm/cc-cloud-api-adaptor/podvm-docker-image
+      caa_image: ghcr.io/confidential-containers/cloud-api-adaptor
+    secrets: inherit
