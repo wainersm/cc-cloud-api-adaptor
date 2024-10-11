@@ -11,9 +11,11 @@ const (
 )
 
 type agentConfig struct {
-	ServerAddr           string `toml:"server_addr"`
-	GuestComponentsProcs string `toml:"guest_components_procs"`
-	ImageRegistryAuth    string `toml:"image_registry_auth,omitempty"`
+	ServerAddr                  string `toml:"server_addr"`
+	GuestComponentsProcs        string `toml:"guest_components_procs"`
+	ImageRegistryAuth           string `toml:"image_registry_auth,omitempty"`
+	ImagePolicyFile             string `toml:"image_policy_file"`
+	EnableSignatureVerification bool   `toml:"enable_signature_verification"`
 }
 
 func CreateConfigFile(authJsonPath string) (string, error) {
@@ -23,9 +25,11 @@ func CreateConfigFile(authJsonPath string) (string, error) {
 	}
 
 	config := agentConfig{
-		ServerAddr:           ServerAddr,
-		GuestComponentsProcs: GuestComponentsProcs,
-		ImageRegistryAuth:    imageRegistryAuth,
+		ServerAddr:                  ServerAddr,
+		GuestComponentsProcs:        GuestComponentsProcs,
+		ImageRegistryAuth:           imageRegistryAuth,
+		ImagePolicyFile:             "kbs:///default/security-policy/osc",
+		EnableSignatureVerification: true,
 	}
 
 	bytes, err := toml.Marshal(config)
