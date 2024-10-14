@@ -38,6 +38,8 @@ AGENT_POLICY ?= yes
 AGENT_POLICY_PATH := $(FILES_DIR)/etc/kata-opa
 DEFAULT_AGENT_POLICY_FILE ?= allow-all.rego
 
+# File path relative to podvm/files
+STATIC_AGENT_CONFIG ?=
 
 FORCE_TARGET := $(if $(FORCE),force,)
 

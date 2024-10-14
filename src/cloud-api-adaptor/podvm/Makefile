@@ -75,6 +75,10 @@ ifdef UEFI_FIRMWARE_LOCATION
 endif
 endif
 
+ifneq ($(STATIC_AGENT_CONFIG),)
+	$(eval OPTS += -var static_agent_config=${STATIC_AGENT_CONFIG})
+endif
+
 $(IMAGE_FILE): $(BINARIES) $(FILES) setopts
 	rm -fr output
 	rm -f cloud-init.img

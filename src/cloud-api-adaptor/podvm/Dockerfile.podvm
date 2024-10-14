@@ -16,6 +16,7 @@ ARG CLOUD_PROVIDER
 ARG SE_BOOT
 ARG PODVM_DISTRO=ubuntu
 ARG UEFI=false
+ARG STATIC_AGENT_CONFIG
 
 # If not provided, uses system architecture
 ARG ARCH
@@ -25,6 +26,7 @@ ENV PODVM_DISTRO=${PODVM_DISTRO}
 ENV ARCH=${ARCH}
 ENV UEFI=${UEFI}
 ENV SE_BOOT=${SE_BOOT}
+ENV STATIC_AGENT_CONFIG=${STATIC_AGENT_CONFIG}
 
 # Defaults to Ubuntu Focal amd64 release image. These variables can be overriden as needed
 ARG IMAGE_URL

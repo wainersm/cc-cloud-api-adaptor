@@ -118,4 +118,8 @@ case $PODVM_DISTRO in
         ;;
 esac
 
+if [ -n "${STATIC_AGENT_CONFIG:-}" ]; then
+	sudo sed -i "s#/run/peerpod/agent-config.toml#${STATIC_AGENT_CONFIG}#" /etc/systemd/system/kata-agent.service
+fi
+
 exit 0

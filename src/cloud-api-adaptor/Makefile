@@ -19,6 +19,8 @@ SOURCEDIRS  := ./cmd ./pkg
 PACKAGES    := $(shell go list $(addsuffix /...,$(SOURCEDIRS)))
 SOURCES     := $(shell find $(SOURCEDIRS) -name '*.go' -print)
 ATTESTER    ?= none
+STATIC_AGENT_CONFIG ?=
+
 # End-to-end tests overall run timeout.
 TEST_E2E_TIMEOUT ?= 60m
 # To run a sub-set of tests, set an unanchored regex matching the test's name as in go's test -run option.
@@ -207,5 +209,6 @@ endif
 	--build-arg CLOUD_PROVIDER=$(or $(CLOUD_PROVIDER),generic) \
 	--build-arg IMAGE_URL=$(IMAGE_URL) \
 	--build-arg IMAGE_CHECKSUM=$(IMAGE_CHECKSUM) \
+	--build-arg STATIC_AGENT_CONFIG=$(STATIC_AGENT_CONFIG) \
 	$(DOCKER_OPTS) .
 	rm -rf .git

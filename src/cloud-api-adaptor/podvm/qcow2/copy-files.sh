@@ -4,6 +4,9 @@
 
 sudo mkdir -p /etc/containers
 sudo cp /tmp/files/etc/aa-offline_fs_kbc-keys.json /etc/aa-offline_fs_kbc-keys.json
+if [ -n "${STATIC_AGENT_CONFIG:-}" ] && [ -f "/tmp/files/${STATIC_AGENT_CONFIG}" ]; then
+	sudo cp "/tmp/files/${STATIC_AGENT_CONFIG}" "${STATIC_AGENT_CONFIG}"
+fi
 sudo cp -a /tmp/files/etc/containers/* /etc/containers/
 sudo cp -a /tmp/files/etc/systemd/* /etc/systemd/
 if [ -e /tmp/files/etc/aa-offline_fs_kbc-resources.json ]; then

@@ -55,6 +55,9 @@ build {
 
   provisioner "shell" {
     remote_folder = "~"
+    environment_vars = [
+      "STATIC_AGENT_CONFIG=${var.static_agent_config}"
+    ]
     inline = [
       "sudo bash ~/copy-files.sh"
     ]
@@ -84,7 +87,8 @@ build {
     environment_vars = [
       "CLOUD_PROVIDER=${var.cloud_provider}",
       "PODVM_DISTRO=${var.podvm_distro}",
-      "DISABLE_CLOUD_CONFIG=${var.disable_cloud_config}"
+      "DISABLE_CLOUD_CONFIG=${var.disable_cloud_config}",
+      "STATIC_AGENT_CONFIG=${var.static_agent_config}"
     ]
     inline = [
       "sudo -E bash ~/misc-settings.sh"
