@@ -34,8 +34,8 @@ git:
     url: https://github.com/confidential-containers/guest-components
     reference: v0.9.0
   kata-containers:
-    url: https://github.com/kata-containers/kata-containers
-    reference: 3.7.0
+    url: https://github.com/wainersm/kata-containers
+    reference: 3653aa96d726818a3f3c8b2ee1acf0d85ccab218
   umoci:
     url: https://github.com/opencontainers/umoci
     reference: v0.4.7
