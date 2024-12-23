@@ -109,6 +109,11 @@ type FileUserDataProvider struct{ DefaultRetry }
 
 func (a FileUserDataProvider) GetUserData(ctx context.Context) ([]byte, error) {
 	path := UserDataPath
+
+	if _, err := os.Stat(UserDataPath); os.IsNotExist(err) {
+		path = DockerUserDataPath
+	}
+
 	logger.Printf("provider: File, userDataPath: %s\n", path)
 	userData, err := os.ReadFile(path)
 	if err != nil {

@@ -29,9 +29,16 @@ func isGCPVM(ctx context.Context) bool {
 }
 
 func hasUserDataFile() bool {
-	_, err := os.Stat(UserDataPath)
-	if err != nil && os.IsNotExist(err) {
-		return false
+	paths := []string{
+		UserDataPath,
+		DockerUserDataPath,
 	}
-	return true
+
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
+			return true // Found at least one existing file
+		}
+	}
+	return false // Neither file exists
+
 }
