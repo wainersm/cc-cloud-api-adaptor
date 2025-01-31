@@ -268,6 +268,11 @@ func (a *AWSProvisioner) DeleteVPC(ctx context.Context, cfg *envconf.Config) err
 		}
 	}
 
+	if a.Bucket.Key != "" {
+		log.Infof("Delete key %s from bucket: %s", a.Bucket.Key, a.Bucket.Name)
+		a.Bucket.deleteKey()
+	}
+
 	return nil
 }
 
