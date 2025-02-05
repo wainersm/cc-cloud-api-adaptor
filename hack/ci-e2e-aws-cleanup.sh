@@ -12,6 +12,9 @@ tag_vpc="caa-e2e-test-vpc"
 
 read -r -a vpcs <<< "$(aws  ec2 describe-vpcs --filters Name=tag:Name,Values=$tag_vpc --query 'Vpcs[*].VpcId')"
 
+echo "DEBUG VPCS: ${vpcs[@]}"
+aws  ec2 describe-vpcs --filters Name=tag:Name,Values=$tag_vpc --query 'Vpcs[*].VpcId'
+
 if [ ${#vpcs[@]} -eq 0 ]; then
     echo "There aren't VPCs to delete. Exiting..."
     exit 0
