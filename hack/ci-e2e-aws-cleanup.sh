@@ -10,10 +10,10 @@ script_dir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 
 tag_vpc="caa-e2e-test-vpc"
 
-read -r -a vpcs <<< "$(aws  ec2 describe-vpcs --filters Name=tag:Name,Values=$tag_vpc --query 'Vpcs[*].VpcId')"
+read -r -a vpcs <<< "$(aws  ec2 describe-vpcs --filters Name=tag:Name,Values=$tag_vpc --query 'Vpcs[*].VpcId' --output text)"
 
 echo "DEBUG VPCS: ${vpcs[@]}"
-aws  ec2 describe-vpcs --filters Name=tag:Name,Values=$tag_vpc --query 'Vpcs[*].VpcId'
+aws  ec2 describe-vpcs --filters Name=tag:Name,Values=$tag_vpc --query 'Vpcs[*].VpcId' --output text
 
 if [ ${#vpcs[@]} -eq 0 ]; then
     echo "There aren't VPCs to delete. Exiting..."
@@ -30,22 +30,22 @@ for vpc in "${vpcs[@]}"; do
     echo "aws_vpc_id=\"$vpc\"" > "$TEST_PROVISION_FILE"
 
     # Find related subnets
-    read -r -a subnets <<< "$(aws ec2 describe-subnets --filter "Name=vpc-id,Values=$vpc" --query 'Subnets[*].SubnetId')"
+    read -r -a subnets <<< "$(aws ec2 describe-subnets --filter "Name=vpc-id,Values=$vpc" --query 'Subnets[*].SubnetId' --output text)"
     for net in "${subnets[@]}"; do
         echo "aws_vpc_subnet_id=\"$net\"" >> "$TEST_PROVISION_FILE"
     done
 
     # Find related security groups
-    read -r -a sgs <<< "$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=$vpc" "Name=tag:Name,Values=caa-e2e-test-sg" --query 'SecurityGroups[*].GroupId')"
+    read -r -a sgs <<< "$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=$vpc" "Name=tag:Name,Values=caa-e2e-test-sg" --query 'SecurityGroups[*].GroupId' --output text)"
     for sg in "${sgs[@]}"; do
         echo "aws_vpc_sg_id=\"$sg\"" >> "$TEST_PROVISION_FILE"
     done
 
     # Find related route tables and internet gateways
-    read -r -a rtbs <<< "$(aws ec2 describe-route-tables --filters "Name=vpc-id,Values=$vpc" "Name=tag:Name,Values=caa-e2e-test-rtb" --query 'RouteTables[*].RouteTableId')"
+    read -r -a rtbs <<< "$(aws ec2 describe-route-tables --filters "Name=vpc-id,Values=$vpc" "Name=tag:Name,Values=caa-e2e-test-rtb" --query 'RouteTables[*].RouteTableId' --output text)"
     for rtb in "${rtbs[@]}"; do
       echo "aws_vpc_rt_id=\"$rtb\"" >> "$TEST_PROVISION_FILE"
-      read -r -a igws <<< "$(aws ec2 describe-route-tables --filter "Name=route-table-id,Values=$rtb" --query 'RouteTables[0].Routes[*].GatewayId')"
+      read -r -a igws <<< "$(aws ec2 describe-route-tables --filter "Name=route-table-id,Values=$rtb" --query 'RouteTables[0].Routes[*].GatewayId' --output text)"
       for igw in "${igws[@]}"; do
         [ "$igw" != "local" ] && echo "aws_vpc_igw_id=\"$igw\"" >> "$TEST_PROVISION_FILE"
       done
