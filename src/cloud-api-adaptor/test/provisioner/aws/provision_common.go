@@ -132,6 +132,7 @@ func NewAWSProvisioner(properties map[string]string) (pv.CloudProvisioner, error
 		log.Error("Failed to load AWS config")
 		return nil, err
 	}
+	log.Println("AWS Config loaded successfully:", cfg)
 
 	if properties["aws_region"] != "" {
 		cfg.Region = properties["aws_region"]
@@ -280,6 +281,14 @@ func (a *AWSProvisioner) DeleteVPC(ctx context.Context, cfg *envconf.Config) err
 
 func (a *AWSProvisioner) GetProperties(ctx context.Context, cfg *envconf.Config) map[string]string {
 	credentials, _ := a.AwsConfig.Credentials.Retrieve(context.TODO())
+
+	if credentials.AccessKeyID == "" {
+		log.Println("AWS access key ID empty")
+	}
+
+	if credentials.SecretAccessKey == "" {
+		log.Println("AWS secret access key ID empty")
+	}
 
 	return map[string]string{
 		"CONTAINER_RUNTIME":    a.containerRuntime,
