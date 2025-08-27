@@ -180,6 +180,14 @@ jobs:
           ./libvirt/kcli_cluster.sh create
           echo "KUBECONFIG=$HOME/.kcli/clusters/peer-pods/auth/kubeconfig" >> "$GITHUB_ENV"
           echo "::endgroup::"
+          echo "::group::debug time drift"
+          date
+          export KUBECONFIG="$HOME/.kcli/clusters/peer-pods/auth/kubeconfig"
+          for worker in $(kubectl get node -o name -l node.kubernetes.io/worker 2>/dev/null); do
+          kubectl debug --image quay.io/prometheus/busybox -q -i \
+            "$worker" -- sudo chroot /host date
+          done
+          echo "::endgroup::"
 
       - name: run tests
         id: runTests
