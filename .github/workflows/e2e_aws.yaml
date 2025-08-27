@@ -158,6 +158,14 @@ jobs:
       - name: Create on-prem cluster
         if: inputs.cluster_type == 'onprem'
         run: |
+          echo "::group::Install and configure NTP"
+          sudo apt update
+          sudo apt install -y chrony
+          echo "server ntp.ubuntu.com iburst" | sudo tee -a /etc/chrony.conf
+          echo "server time.aws.com iburst" | sudo tee -a /etc/chrony.conf
+          sudo systemctl restart chrony
+          chronyc sources -v
+          echo "::endgroup::"
           # Let's use kcli to build a kubeadm cluster for us
           echo "::group::Configure libvirt"
           ./libvirt/config_libvirt.sh
