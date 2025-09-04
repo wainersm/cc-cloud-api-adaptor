@@ -151,6 +151,7 @@ jobs:
           disablecvm="true"
           cluster_type="${{ inputs.cluster_type }}"
           ssh_kp_name="caa-e2e-test"
+          resources_basename="ci-caa-${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           EOF
           # For debugging
           echo "::group::aws.properties"
