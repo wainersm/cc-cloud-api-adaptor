@@ -84,6 +84,25 @@ jobs:
         run: |
           ./hack/ci-helper.sh rebase-atop-of-the-latest-target-branch
 
+      - name: Remove unnecessary directories to free up space
+        run: |
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/lib/jvm
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/julia*
+          sudo rm -rf /opt/az
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /opt/microsoft
+          sudo rm -rf /opt/google
+          sudo rm -rf /usr/lib/firefox
+
       - name: Read properties from versions.yaml
         run: |
           sudo snap install yq
@@ -96,6 +115,7 @@ jobs:
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: "**/go.sum"
 
       - uses: oras-project/setup-oras@8d34698a59f5ffe24821f0b48ab62a3de8b64b20 # v1
         with:
@@ -105,7 +125,7 @@ jobs:
         if: ${{ !inputs.oras }}
         run: |
            qcow2=$(echo "${{ inputs.podvm_image }}" | sed -e "s#.*/\(.*\):.*#\1.qcow2#")
-           ./hack/download-image.sh "${{ inputs.podvm_image }}" . -o "${qcow2}"
+           ./hack/download-image.sh "${{ inputs.podvm_image }}" . -o "${qcow2}" --clean-up
            echo "PODVM_QCOW2=$(pwd)/${qcow2}" >> "$GITHUB_ENV"
            # Clean up docker images to make space
            docker system prune -a -f
