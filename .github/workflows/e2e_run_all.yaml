@@ -45,11 +45,7 @@ defaults:
   run:
     working-directory: src/cloud-api-adaptor
 
-permissions:
-  # Required by aws-actions/configure-aws-credentials
-  id-token: write
-  # Required by aws-actions/configure-aws-credentials
-  contents: read
+permissions: {}
 
 jobs:
   podvm_builder:
@@ -232,6 +228,9 @@ jobs:
           - generic
         arch:
           - amd64
+    permissions:
+      id-token: write # Required by aws-actions/configure-aws-credentials
+      contents: read  # Required by aws-actions/configure-aws-credentials
     uses: ./.github/workflows/e2e_aws.yaml
     with:
       caa_image: ${{ inputs.registry }}/cloud-api-adaptor:${{ inputs.caa_image_tag }}

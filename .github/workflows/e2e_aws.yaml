@@ -37,13 +37,11 @@ on:
       AWS_IAM_ROLE_ARN:
         required: true
 
+permissions: {}
+
 env:
   CLOUD_PROVIDER: aws
   DEBIAN_FRONTEND: noninteractive
-
-permissions:
-  id-token: write # Required by aws-actions/configure-aws-credentials
-  contents: read  # Required by aws-actions/configure-aws-credentials
 
 jobs:
   # Check the org/repository has AWS secrets (AWS_IAM_ROLE_ARN). On absence of
@@ -69,6 +67,9 @@ jobs:
     defaults:
       run:
         working-directory: src/cloud-api-adaptor
+    permissions:
+      id-token: write # Required by aws-actions/configure-aws-credentials
+      contents: read  # Required by aws-actions/configure-aws-credentials
     steps:
       - name: Checkout Code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
