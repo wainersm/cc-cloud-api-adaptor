@@ -58,6 +58,7 @@ type AMIImage struct {
 	EBSSnapshotId   string // EBS disk snapshot ID
 	ID              string // AMI image ID
 	RootDeviceName  string // Root device name
+	VmImportRole    string // vmimport role name
 }
 
 // Vpc represents an AWS VPC
@@ -330,8 +331,8 @@ func (a *AWSProvisioner) UploadPodvm(imagePath string, ctx context.Context, cfg 
 	}
 
 	// Create the vmimport role
-	log.Infof("Create vmimport service role")
-	if err = createVmimportServiceRole(ctx, a.iamClient, a.Bucket.Name); err != nil {
+	log.Infof("Create vmimport service role: %s", a.Image.VmImportRole)
+	if err = createVmimportServiceRole(ctx, a.iamClient, a.Bucket.Name, a.Image.VmImportRole); err != nil {
 		return err
 	}
 
@@ -774,9 +775,7 @@ func (b *S3Bucket) createBucket() error {
 // createVmimportServiceRole Creates the vmimport service role as required to use the VM snaphot import feature.
 //
 //	For further details see https://docs.aws.amazon.com/vm-import/latest/userguide/required-permissions.html
-func createVmimportServiceRole(ctx context.Context, client *iam.Client, bucketName string) error {
-	const roleName = "vmimport"
-
+func createVmimportServiceRole(ctx context.Context, client *iam.Client, bucketName string, roleName string) error {
 	_, err := client.GetRole(context.TODO(), &iam.GetRoleInput{
 		RoleName: aws.String(roleName),
 	})
@@ -843,6 +842,7 @@ func NewAMIImage(client *ec2.Client, properties map[string]string) *AMIImage {
 		EBSSnapshotId:   "", // To be defined when the snapshot is created
 		ID:              properties["podvm_aws_ami_id"],
 		RootDeviceName:  "/dev/xvda",
+		VmImportRole:    ResourcesBaseName + "-vmimport",
 	}
 }
 
@@ -859,6 +859,7 @@ func (i *AMIImage) importEBSSnapshot(bucket *S3Bucket) error {
 				S3Key:    aws.String(bucket.Key),
 			},
 		},
+		RoleName:          aws.String(i.VmImportRole),
 		TagSpecifications: defaultTagSpecifications(i.BaseName+"-snap", ec2types.ResourceTypeImportSnapshotTask),
 	})
 	if err != nil {
