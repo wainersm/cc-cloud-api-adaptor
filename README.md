@@ -17,7 +17,7 @@ or nested virtualisation support.
 The background and description of the components involved in 'peer pods' can be found in the [architecture documentation](./docs/architecture.md).
 
 ## Cloud Providers
-[cloud-providers](./src/cloud-providers/) Cloud Providers for Kata remote hypervisor
+[cloud-providers](./src/cloud-providers/) Cloud Providers for Kata Containers remote hypervisor
 
 ## PeerPod controller
 [peerpod-ctrl](./src/peerpod-ctrl/) PeerPod controller is watching PeerPod events and deleting dangling resources that were not deleted by the cloud-api-adaptor at Pod deletion time.
