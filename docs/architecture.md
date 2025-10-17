@@ -6,7 +6,7 @@ The cloud-api-adaptor is an implementation of the
 [remote hypervisor interface](https://github.com/kata-containers/kata-containers/blob/main/src/runtime/virtcontainers/remote.go)
 of [Kata Containers](https://github.com/kata-containers/kata-containers)
 
-It enables the creation of Kata Containers VMs on any machines without the need for bare metal worker nodes,
+It enable the creation of Kata Containers VMs on any machines without the need for bare metal worker nodes,
 or nested virtualisation support.
 
 ## Background
