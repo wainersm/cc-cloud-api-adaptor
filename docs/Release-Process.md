@@ -1,7 +1,7 @@
 # Release process
 
 This document lists how to do a release of 'Peer pods' functionality in the context of a wider Confidential
-Containers release
+Containers (CoCo) release
 
 ## Release phases
 
