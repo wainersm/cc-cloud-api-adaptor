@@ -214,7 +214,7 @@ jobs:
       - name: Force AWS clean-up
         if: failure() && steps.runTests.outcome == 'failure'
         env:
-          res_basename: "ci-caa-${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          res_basename: "ci-caa-${{ env.GITHUB_RUN_ID }}_${{ env.GITHUB_RUN_ATTEMPT }}"
         working-directory: ./
         run: |
           ./hack/ci-e2e-aws-cleanup.sh
