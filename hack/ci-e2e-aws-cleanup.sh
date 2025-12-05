@@ -39,8 +39,7 @@ delete_vpcs() {
     # Find related subnets
     read -r -a subnets <<< "$(aws ec2 describe-subnets --filter "Name=vpc-id,Values=$vpc" --query 'Subnets[*].SubnetId' --region "${AWS_REGION}" --output text)"
     if [ ${#subnets[@]} -gt 0 ]; then
-      IFS=',' subnet_list="${subnets[*]}"
-      echo "aws_vpc_subnet_id=\"$subnet_list\"" >> "$TEST_PROVISION_FILE"
+      echo "aws_vpc_subnet_id=\"$(echo "${subnets[*]}" | tr ' ' ',')\"" >> "$TEST_PROVISION_FILE"
     fi
 
     # Find related security groups
