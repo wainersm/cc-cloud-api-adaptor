@@ -82,13 +82,12 @@ type Cluster interface {
 
 // EKSCluster represents an EKS cluster
 type EKSCluster struct {
-	AwsConfig     aws.Config
-	Name          string
-	NodeGroupName string
-	NumWorkers    int32
-	SshKpName     string
-	Version       string
-	Vpc           *Vpc
+	AwsConfig  aws.Config
+	Name       string
+	NumWorkers int32
+	SshKpName  string
+	Version    string
+	Vpc        *Vpc
 }
 
 // OnPremCluster represents an existing and running cluster
@@ -154,7 +153,7 @@ func NewAWSProvisioner(properties map[string]string) (pv.CloudProvisioner, error
 		// The podvm should be created with public IP so CAA can connect
 		properties["use_public_ip"] = "true"
 	} else if properties["cluster_type"] == "eks" {
-		cluster = NewEKSCluster(cfg, vpc, properties["ssh_kp_name"])
+		cluster = NewEKSCluster(cfg, vpc, properties["ssh_kp_name"], properties["eks_name"])
 	} else {
 		return nil, fmt.Errorf("Cluster type '%s' not implemented",
 			properties["cluster_type"])
@@ -1269,16 +1268,17 @@ func createRoleAndAttachPolicy(client *iam.Client, roleName string, trustPolicy 
 // It requires a AWS configuration with access and authentication information, a
 // VPC already instantiated and with a public subnet, and an EC2 SSH key-pair used
 // to access the cluster's worker nodes.
-func NewEKSCluster(cfg aws.Config, vpc *Vpc, SshKpName string) *EKSCluster {
-	name := "peer-pods-test-k8s"
+// If eksName is provided, it will use an existing cluster with that name instead of creating a new one
+// otherwise it will create a cluster and set a default name.
+func NewEKSCluster(cfg aws.Config, vpc *Vpc, SshKpName string, eksName string) *EKSCluster {
+
 	return &EKSCluster{
-		AwsConfig:     cfg,
-		Name:          name,
-		NodeGroupName: name,
-		NumWorkers:    1,
-		SshKpName:     SshKpName,
-		Version:       EksVersion,
-		Vpc:           vpc,
+		AwsConfig:  cfg,
+		Name:       eksName,
+		NumWorkers: 1,
+		SshKpName:  SshKpName,
+		Version:    EksVersion,
+		Vpc:        vpc,
 	}
 }
 
@@ -1287,6 +1287,13 @@ func NewEKSCluster(cfg aws.Config, vpc *Vpc, SshKpName string) *EKSCluster {
 // created if it does not exist on the VPC already.
 func (e *EKSCluster) CreateCluster() error {
 	var err error
+
+	if e.Name != "" {
+		log.Infof("Using existing EKS cluster: %s", e.Name)
+		return nil
+	}
+
+	e.Name = e.Vpc.BaseName + "-k8s"
 
 	if e.Vpc.SecondarySubnetId == "" {
 		log.Info("Create a secondary subnet for EKS")
@@ -1305,7 +1312,7 @@ func (e *EKSCluster) CreateCluster() error {
 		"--region", e.AwsConfig.Region,
 		"--kubeconfig", e.Name + "-kubeconfig",
 		"--vpc-private-subnets", e.Vpc.SubnetId + "," + e.Vpc.SecondarySubnetId,
-		"--nodegroup-name", e.NodeGroupName,
+		"--nodegroup-name", e.Name,
 		"--nodes", strconv.FormatInt(int64(e.NumWorkers), 10),
 		"--nodes-min", strconv.FormatInt(int64(e.NumWorkers), 10),
 		"--nodes-max", strconv.FormatInt(int64(e.NumWorkers), 10),
