@@ -107,6 +107,11 @@ jobs:
           echo "GO_VERSION=${go_version}" >> "$GITHUB_ENV"
           echo "ORAS_VERSION=$(yq -e '.tools.oras' versions.yaml)" >> "$GITHUB_ENV"
 
+      - name: Install qemu-img
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-utils
+
       - name: Setup Golang version ${{ env.GO_VERSION }}
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
