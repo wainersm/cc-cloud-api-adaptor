@@ -10,8 +10,10 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	nodev1 "k8s.io/api/node/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -94,6 +96,22 @@ func WaitForDaemonSet(ctx context.Context, cfg *envconf.Config, namespace string
 		if err = wait.For(conditions.New(resources).PodReady(&pod), wait.WithTimeout(timeout)); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// WaitForRuntimeClass waits for a runtimeclass to be created
+func WaitForRuntimeClass(ctx context.Context, cfg *envconf.Config, namespace string, runtimeClass *nodev1.RuntimeClass, timeout time.Duration) error {
+	client, err := cfg.NewClient()
+	if err != nil {
+		return err
+	}
+	resources := client.Resources(namespace)
+
+	log.Infof("Wait for the %s runtimeclass be created\n", runtimeClass.GetName())
+	if err = wait.For(conditions.New(resources).ResourcesFound(&nodev1.RuntimeClassList{Items: []nodev1.RuntimeClass{*runtimeClass}}),
+		wait.WithTimeout(timeout)); err != nil {
+		return err
 	}
 	return nil
 }

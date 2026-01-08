@@ -288,6 +288,10 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 		if err = WaitForDaemonSet(ctx, cfg, p.namespace, p.caaDaemonSet, time.Minute*10); err != nil {
 			return err
 		}
+		// Wait for the runtimeclass to be created
+		if err = WaitForRuntimeClass(ctx, cfg, p.namespace, p.runtimeClass, time.Second*60); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -347,9 +351,7 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 		return err
 	}
 
-	log.Infof("Wait for the %s runtimeclass be created\n", p.runtimeClass.GetName())
-	if err = wait.For(conditions.New(resources).ResourcesFound(&nodev1.RuntimeClassList{Items: []nodev1.RuntimeClass{*p.runtimeClass}}),
-		wait.WithTimeout(time.Second*60)); err != nil {
+	if err = WaitForRuntimeClass(ctx, cfg, p.namespace, p.runtimeClass, time.Second*60); err != nil {
 		return err
 	}
 
