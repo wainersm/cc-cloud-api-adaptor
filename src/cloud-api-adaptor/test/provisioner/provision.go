@@ -60,6 +60,7 @@ type CloudAPIAdaptor struct {
 	cloudProvider        string               // Cloud provider
 	controllerDeployment *appsv1.Deployment   // Represents the controller manager deployment
 	namespace            string               // The CoCo namespace
+	kataDeployDaemonSet  *appsv1.DaemonSet    // Represents the kata-deploy daemonset
 	installOverlay       InstallOverlay       // Pointer to the kustomize overlay
 	installDir           string               // The install directory path
 	runtimeClass         *nodev1.RuntimeClass // The Kata Containers runtimeclass
@@ -125,6 +126,7 @@ func NewCloudAPIAdaptor(provider string, installDir string) (*CloudAPIAdaptor, e
 		cloudProvider:        provider,
 		controllerDeployment: &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "cc-operator-controller-manager", Namespace: namespace}},
 		namespace:            namespace,
+		kataDeployDaemonSet:  &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "kata-deploy", Namespace: namespace}},
 		installOverlay:       overlay,
 		installDir:           installDir,
 		runtimeClass:         &nodev1.RuntimeClass{ObjectMeta: metav1.ObjectMeta{Name: "kata-remote", Namespace: ""}},
@@ -290,6 +292,10 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 		}
 		// Wait for the CAA daemonset to be ready
 		if err = WaitForDaemonSet(ctx, cfg, p.namespace, p.caaDaemonSet, time.Minute*10); err != nil {
+			return err
+		}
+		// Wait for the kata-deploy daemonset to be ready
+		if err = WaitForDaemonSet(ctx, cfg, p.namespace, p.kataDeployDaemonSet, time.Minute*10); err != nil {
 			return err
 		}
 		// Wait for the runtimeclass to be created
