@@ -284,6 +284,10 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 		if err := chart.Install(ctx, cfg); err != nil {
 			return err
 		}
+		// Wait for the CAA daemonset to be ready
+		if err = WaitForDaemonSet(ctx, cfg, p.namespace, p.caaDaemonSet, time.Minute*10); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -328,32 +332,11 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 	}
 
 	// Wait for the CoCo installer and CAA pods be ready
-	daemonSetList := map[*appsv1.DaemonSet]time.Duration{
-		p.ccDaemonSet:  time.Minute * 15,
-		p.caaDaemonSet: time.Minute * 10,
+	if err = WaitForDaemonSet(ctx, cfg, p.namespace, p.ccDaemonSet, time.Minute*15); err != nil {
+		return err
 	}
-
-	for ds, timeout := range daemonSetList {
-		// Wait for the daemonset to have at least one pod running then wait for each pod
-		// be ready.
-
-		fmt.Printf("Wait for the %s DaemonSet be available\n", ds.GetName())
-		if err = wait.For(conditions.New(resources).ResourceMatch(ds, func(object k8s.Object) bool {
-			ds = object.(*appsv1.DaemonSet)
-			return ds.Status.CurrentNumberScheduled > 0
-		}), wait.WithTimeout(time.Minute*5)); err != nil {
-			return err
-		}
-		pods, err := GetDaemonSetOwnedPods(ctx, cfg, ds)
-		if err != nil {
-			return err
-		}
-		for _, pod := range pods.Items {
-			fmt.Printf("Wait for the pod %s be ready\n", pod.GetName())
-			if err = wait.For(conditions.New(resources).PodReady(&pod), wait.WithTimeout(timeout)); err != nil {
-				return err
-			}
-		}
+	if err = WaitForDaemonSet(ctx, cfg, p.namespace, p.caaDaemonSet, time.Minute*10); err != nil {
+		return err
 	}
 
 	cmd = exec.Command("kubectl", "get", "cm", "peer-pods-cm", "-n", GetCAANamespace(), "-o", "yaml")
