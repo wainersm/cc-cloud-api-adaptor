@@ -125,6 +125,11 @@ type AwsInstallOverlay struct {
 	Overlay *pv.KustomizeOverlay
 }
 
+// AwsInstallChart implements the InstallChart interface
+type AwsInstallChart struct {
+	Helm *pv.Helm
+}
+
 // NewAWSProvisioner instantiates the AWS provisioner
 func NewAWSProvisioner(properties map[string]string) (pv.CloudProvisioner, error) {
 	var cluster Cluster
@@ -1195,6 +1200,79 @@ func (a *AwsInstallOverlay) Edit(ctx context.Context, cfg *envconf.Config, prope
 
 	if err = a.Overlay.YamlReload(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func NewAwsInstallChart(installDir, provider string) (pv.InstallChart, error) {
+	chartPath := filepath.Join(installDir, "charts", "peerpods")
+	namespace := pv.GetCAANamespace()
+	releaseName := "peerpods"
+	debug := false
+
+	helm, err := pv.NewHelm(chartPath, namespace, releaseName, provider, debug)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AwsInstallChart{
+		Helm: helm,
+	}, nil
+}
+
+func (a *AwsInstallChart) Install(ctx context.Context, cfg *envconf.Config) error {
+	return a.Helm.Install(ctx, cfg)
+}
+
+func (a *AwsInstallChart) Uninstall(ctx context.Context, cfg *envconf.Config) error {
+	return a.Helm.Uninstall(ctx, cfg)
+}
+
+func (a *AwsInstallChart) Configure(ctx context.Context, cfg *envconf.Config, properties map[string]string) error {
+	if properties["CAA_IMAGE"] != "" {
+		img := strings.Split(properties["CAA_IMAGE"], ":")
+		if len(img) == 2 {
+			imageName := img[0]
+			imageTag := img[1]
+			a.Helm.OverrideValues["image.name"] = imageName
+			a.Helm.OverrideValues["image.tag"] = imageTag
+		} else if len(img) == 1 {
+			a.Helm.OverrideValues["image.name"] = img[0]
+		}
+	}
+
+	// Mapping the internal properties to Helm chart values.
+	mapProps := map[string]string{
+		"disablecvm":           "DISABLECVM",
+		"pause_image":          "PAUSE_IMAGE",
+		"podvm_launchtemplate": "PODVM_LAUNCHTEMPLATE_NAME",
+		"podvm_ami":            "PODVM_AMI_ID",
+		"podvm_instance_type":  "PODVM_INSTANCE_TYPE",
+		"sg_ids":               "AWS_SG_IDS",
+		"subnet_id":            "AWS_SUBNET_ID",
+		"ssh_kp_name":          "SSH_KP_NAME",
+		"region":               "AWS_REGION",
+		"tunnel_type":          "TUNNEL_TYPE",
+		"vxlan_port":           "VXLAN_PORT",
+		"use_public_ip":        "USE_PUBLIC_IP",
+	}
+
+	for k, v := range mapProps {
+		if properties[k] != "" {
+			a.Helm.OverrideProviderValues[v] = properties[k]
+		}
+	}
+
+	// Handle credentials - map to providerSecrets
+	if properties["access_key_id"] != "" {
+		a.Helm.OverrideProviderSecrets["AWS_ACCESS_KEY_ID"] = properties["access_key_id"]
+	}
+	if properties["secret_access_key"] != "" {
+		a.Helm.OverrideProviderSecrets["AWS_SECRET_ACCESS_KEY"] = properties["secret_access_key"]
+	}
+	if properties["session_token"] != "" {
+		a.Helm.OverrideProviderSecrets["AWS_SESSION_TOKEN"] = properties["session_token"]
 	}
 
 	return nil
