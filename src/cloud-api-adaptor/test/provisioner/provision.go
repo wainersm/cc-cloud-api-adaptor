@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -52,18 +53,17 @@ type KbsInstallOverlay struct {
 var NewProvisionerFunctions = make(map[string]NewProvisionerFunc)
 
 type CloudAPIAdaptor struct {
-	caaDaemonSet         *appsv1.DaemonSet    // Represents the cloud-api-adaptor daemonset
-	ccDaemonSet          *appsv1.DaemonSet    // Represents the CoCo installer daemonset
-	ccOpGitRepo          string               // CoCo operator's repository URL
-	ccOpConfig           string               // CoCo operator's config to use: default or release
-	ccOpGitRef           string               // CoCo operator's repository reference
-	cloudProvider        string               // Cloud provider
-	controllerDeployment *appsv1.Deployment   // Represents the controller manager deployment
-	namespace            string               // The CoCo namespace
-	installOverlay       InstallOverlay       // Pointer to the kustomize overlay
-	installDir           string               // The install directory path
-	runtimeClass         *nodev1.RuntimeClass // The Kata Containers runtimeclass
-	rootSrcDir           string               // The root src directory of cloud-api-adaptor
+	caaDaemonSet        *appsv1.DaemonSet    // Represents the cloud-api-adaptor daemonset
+	kataDeployDaemonSet *appsv1.DaemonSet    // Represents the CoCo installer daemonset
+	ccOpGitRepo         string               // CoCo operator's repository URL
+	ccOpConfig          string               // CoCo operator's config to use: default or release
+	ccOpGitRef          string               // CoCo operator's repository reference
+	cloudProvider       string               // Cloud provider
+	namespace           string               // The CoCo namespace
+	installOverlay      InstallOverlay       // Pointer to the kustomize overlay
+	installDir          string               // The install directory path
+	runtimeClass        *nodev1.RuntimeClass // The Kata Containers runtimeclass
+	rootSrcDir          string               // The root src directory of cloud-api-adaptor
 }
 
 type NewInstallOverlayFunc func(installDir, provider string) (InstallOverlay, error)
@@ -117,18 +117,17 @@ func NewCloudAPIAdaptor(provider string, installDir string) (*CloudAPIAdaptor, e
 	ccOperator := versions.Git["coco-operator"]
 
 	return &CloudAPIAdaptor{
-		caaDaemonSet:         &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "cloud-api-adaptor-daemonset", Namespace: namespace}},
-		ccDaemonSet:          &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "cc-operator-daemon-install", Namespace: namespace}},
-		ccOpGitRepo:          ccOperator.Url,
-		ccOpConfig:           ccOperator.Config,
-		ccOpGitRef:           ccOperator.Ref,
-		cloudProvider:        provider,
-		controllerDeployment: &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "cc-operator-controller-manager", Namespace: namespace}},
-		namespace:            namespace,
-		installOverlay:       overlay,
-		installDir:           installDir,
-		runtimeClass:         &nodev1.RuntimeClass{ObjectMeta: metav1.ObjectMeta{Name: "kata-remote", Namespace: ""}},
-		rootSrcDir:           filepath.Dir(installDir),
+		caaDaemonSet:        &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "cloud-api-adaptor-daemonset", Namespace: namespace}},
+		kataDeployDaemonSet: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "kata-deploy", Namespace: namespace}},
+		ccOpGitRepo:         ccOperator.Url,
+		ccOpConfig:          ccOperator.Config,
+		ccOpGitRef:          ccOperator.Ref,
+		cloudProvider:       provider,
+		namespace:           namespace,
+		installOverlay:      overlay,
+		installDir:          installDir,
+		runtimeClass:        &nodev1.RuntimeClass{ObjectMeta: metav1.ObjectMeta{Name: "kata-remote", Namespace: ""}},
+		rootSrcDir:          filepath.Dir(installDir),
 	}, nil
 }
 
@@ -197,7 +196,7 @@ func (p *CloudAPIAdaptor) Delete(ctx context.Context, cfg *envconf.Config) error
 	}
 	resources := client.Resources(p.namespace)
 
-	ccPods, err := GetDaemonSetOwnedPods(ctx, cfg, p.ccDaemonSet)
+	kataPods, err := GetDaemonSetOwnedPods(ctx, cfg, p.kataDeployDaemonSet)
 	if err != nil {
 		return err
 	}
@@ -211,8 +210,8 @@ func (p *CloudAPIAdaptor) Delete(ctx context.Context, cfg *envconf.Config) error
 		return err
 	}
 
-	log.Info("Uninstall CCRuntime CRD")
-	cmd := exec.Command("kubectl", "delete", "-k", p.ccOpGitRepo+"/config/samples/ccruntime/peer-pods?ref="+p.ccOpGitRef)
+	log.Info("Uninstall kata-deploy helm chart")
+	cmd := exec.Command("helm", "uninstall", "kata-deploy", "-n", p.namespace)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
 	stdoutStderr, err := cmd.CombinedOutput()
 	log.Tracef("%v, output: %s", cmd, stdoutStderr)
@@ -220,30 +219,13 @@ func (p *CloudAPIAdaptor) Delete(ctx context.Context, cfg *envconf.Config) error
 		return err
 	}
 
-	for _, pods := range []*corev1.PodList{ccPods, caaPods} {
+	for _, pods := range []*corev1.PodList{kataPods, caaPods} {
 		if err != nil {
 			return err
 		}
 		if err = wait.For(conditions.New(resources).ResourcesDeleted(pods), wait.WithTimeout(time.Minute*5)); err != nil {
 			return err
 		}
-	}
-
-	deployments := &appsv1.DeploymentList{Items: []appsv1.Deployment{*p.controllerDeployment}}
-
-	log.Info("Uninstall the controller manager")
-	cmd = exec.Command("kubectl", "delete", "-k", p.ccOpGitRepo+"/config/"+p.ccOpConfig+"?ref="+p.ccOpGitRef)
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Wait for the %s deployment be deleted\n", p.controllerDeployment.GetName())
-	if err = wait.For(conditions.New(resources).ResourcesDeleted(deployments),
-		wait.WithTimeout(time.Minute*1)); err != nil {
-		return err
 	}
 
 	log.Info("Delete the peerpod-ctrl deployment")
@@ -297,32 +279,40 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 	}
 	resources := client.Resources(p.namespace)
 
-	log.Info("Install the controller manager")
-	// TODO - find go idiomatic way to apply/delete remote kustomize and apply to this file
-	cmd := exec.Command("kubectl", "apply", "-k", p.ccOpGitRepo+"/config/"+p.ccOpConfig+"?ref="+p.ccOpGitRef)
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err := cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
+	kataDeployChart := "oci://ghcr.io/kata-containers/kata-deploy-charts/kata-deploy"
+	kataDeployChartVersion := "3.25.0"
+	shims := []string{"clh", "cloud-hypervisor", "dragonball", "fc", "qemu", "qemu-runtime-rs", "qemu-nvidia-gpu", "qemu-nvidia-gpu-snp", "qemu-nvidia-gpu-tdx", "qemu-snp", "qemu-tdx", "qemu-se", "qemu-se-runtime-rs", "qemu-cca", "qemu-coco-dev", "qemu-coco-dev-runtime-rs", "remote"}
+	disableShims := make([]string, len(shims))
+	for i, shim := range shims {
+		disableShims[i] = fmt.Sprintf("shims.%s.enabled=false", shim)
+	}
+	kataDeployDisableShims := strings.Join(disableShims, ",")
+	args := []string{
+		"install",
+		"kata-deploy",
+		kataDeployChart,
+		"--version", kataDeployChartVersion,
+		"--namespace", p.namespace,
+		"--create-namespace",
+		"--set", kataDeployDisableShims,
+		"--set", "shims.remote.enabled=true",
 	}
 
-	fmt.Printf("Wait for the %s deployment be available\n", p.controllerDeployment.GetName())
-	if err = wait.For(conditions.New(resources).DeploymentConditionMatch(p.controllerDeployment, appsv1.DeploymentAvailable, corev1.ConditionTrue),
-		wait.WithTimeout(time.Minute*10)); err != nil {
+	if props["container_runtime"] != "crio" {
+		args = append(args, "--set", "snapshotter.setup=nydus")
+	}
+
+	log.Info("Install kata-deploy helm chart")
+	cmd := exec.Command("helm", args...)
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
+	stdoutStderr, err := cmd.CombinedOutput()
+	log.Infof("%v, output: %s", cmd, stdoutStderr)
+	if err != nil {
 		return err
 	}
 
 	log.Info("Customize the overlay yaml file")
 	if err := p.installOverlay.Edit(ctx, cfg, props); err != nil {
-		return err
-	}
-
-	cmd = exec.Command("kubectl", "apply", "-k", p.ccOpGitRepo+"/config/samples/ccruntime/peer-pods?ref="+p.ccOpGitRef)
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
 		return err
 	}
 
@@ -333,8 +323,8 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 
 	// Wait for the CoCo installer and CAA pods be ready
 	daemonSetList := map[*appsv1.DaemonSet]time.Duration{
-		p.ccDaemonSet:  time.Minute * 15,
-		p.caaDaemonSet: time.Minute * 10,
+		p.caaDaemonSet:        time.Minute * 10,
+		p.kataDeployDaemonSet: time.Minute * 15,
 	}
 
 	for ds, timeout := range daemonSetList {
