@@ -167,7 +167,6 @@ jobs:
           echo "::endgroup::"
 
       - name: Install Helm
-        if: ${{ inputs.install_method == 'helm' }}
         run: |
           curl -fsSL -o helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
           echo "${HELM_CHECKSUM}  helm.tar.gz" | sha256sum --check --strict
