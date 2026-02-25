@@ -138,8 +138,8 @@ COPY --from=pause_builder /pause-bundle.tar.gz /pause-bundle.tar.gz
 
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers/osc-podvm-payload-rhel9" \
-cpe="cpe:/a:redhat:confidential_compute_attestation:1.11::el9" \
-version="1.11" \
+cpe="cpe:/a:redhat:confidential_compute_attestation:1.12::el9" \
+version="1.12" \
 com.redhat.component="osc-podvm-payload-container" \
 summary="Container image containing podvm artefacts that is required for creating Pod VM images" \
 maintainer="redhat@redhat.com" \
