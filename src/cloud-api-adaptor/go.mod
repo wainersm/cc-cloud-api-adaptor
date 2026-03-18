@@ -19,7 +19,7 @@ require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.6.0
-	github.com/kata-containers/kata-containers/src/runtime v0.0.0-20260219130126-855f4dc7fac1
+	github.com/kata-containers/kata-containers/src/runtime v0.0.0-20260317012958-660e3bb6535b
 	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/stretchr/testify v1.11.1
 	github.com/vishvananda/netlink v1.3.1
@@ -40,7 +40,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2 v2.2.1
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0
 	github.com/Azure/go-autorest/autorest v0.11.30
-	github.com/BurntSushi/toml v1.5.0
+	github.com/BurntSushi/toml v1.6.0
 	github.com/IBM/ibm-cos-sdk-go v1.13.0
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f
@@ -218,12 +218,12 @@ require (
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.mongodb.org/mongo-driver v1.17.6 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
-	go.opentelemetry.io/otel v1.37.0 // indirect
-	go.opentelemetry.io/otel/metric v1.37.0 // indirect
-	go.opentelemetry.io/otel/trace v1.37.0 // indirect
+	go.opentelemetry.io/otel v1.40.0 // indirect
+	go.opentelemetry.io/otel/metric v1.40.0 // indirect
+	go.opentelemetry.io/otel/trace v1.40.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/mod v0.33.0 // indirect
