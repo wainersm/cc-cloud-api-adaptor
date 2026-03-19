@@ -6,7 +6,6 @@ package e2e
 import (
 	"bytes"
 	b64 "encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -103,6 +102,16 @@ kbs_cert = """{{ .KBSCert }}"""
 "policy.rego" = '''{{ .Policy }}'''
 {{- end }}
 `
+
+// PreCreatedSecretResourcePath defines the resource path for the sealed secret.
+// NOTE: This path is embedded in the sealed secret JWS token below (PreCreatedSecret).
+// If this path needs to change, the sealed secret must be regenerated with the new path.
+const PreCreatedSecretResourcePath = "default/sealed-secret/test"
+const PreCreatedSecret = "sealed.eyJiNjQiOnRydWUsImFsZyI6IkVTMjU2Iiwia2lkIjoia2JzOi8vL2RlZmF1bHQvc2lnbmluZy1rZXkvc2VhbGVkLXNlY3JldCJ9.eyJ2ZXJzaW9uIjoiMC4xLjAiLCJ0eXBlIjoidmF1bHQiLCJuYW1lIjoia2JzOi8vL2RlZmF1bHQvc2VhbGVkLXNlY3JldC90ZXN0IiwicHJvdmlkZXIiOiJrYnMiLCJwcm92aWRlcl9zZXR0aW5ncyI6e30sImFubm90YXRpb25zIjp7fX0.ZI2fTv5ramHqHQa9DKBFD5hlJ_Mjf6cEIcpsNGshpyhEiKklML0abfH600TD7LAFHf53oDIJmEcVsDtJ20UafQ"
+
+// The public part of the key pair used to sign the pre-created sealed secret
+const SealedSecretSigningKeyID = "default/signing-key/sealed-secret"
+const SealedSecretSigningJWKPublicKey = `{"alg":"ES256","crv":"P-256","kid":"sealed-secret-test-key","kty":"EC","use":"sig","x":"4jH376AuwTUCIx65AJ_56D7SZzWf7sGcEA7_Csq21UM","y":"rjdceysnSa5ZfzWOPGCURMUuHndxBAGUu4ISTIVN0yA"}`
 
 // Build gzipped and base64 encoded string
 func buildInitdataAnnotation(kbsEndpoint string) (string, error) {
@@ -609,25 +618,6 @@ func WaitForPVCBound(client klient.Client, pvc *corev1.PersistentVolumeClaim, ti
 	return wait.For(conditions.New(client.Resources()).ResourceMatch(pvc, func(object k8s.Object) bool {
 		return object.(*corev1.PersistentVolumeClaim).Status.Phase == corev1.ClaimBound
 	}), wait.WithTimeout(timeout))
-}
-
-func CreateSealedSecretValue(resourceURI string) string {
-	metadata := map[string]interface{}{
-		"version":           "0.1.0",
-		"type":              "vault",
-		"name":              resourceURI,
-		"provider":          "kbs",
-		"provider_settings": map[string]interface{}{},
-		"annotations":       map[string]interface{}{},
-	}
-	metadataStr, err := json.Marshal(metadata)
-	if err != nil {
-		panic(err)
-	}
-	payload := b64.RawURLEncoding.EncodeToString([]byte(metadataStr))
-	header := "fakejwsheader"
-	signature := "fakesignature"
-	return fmt.Sprintf("sealed.%s.%s.%s", header, payload, signature)
 }
 
 // CloudAssert defines assertions to perform on the cloud provider.

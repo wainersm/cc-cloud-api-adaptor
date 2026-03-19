@@ -570,12 +570,11 @@ func DoTestImageDecryption(t *testing.T, e env.Environment, assert CloudAssert, 
 	NewTestCase(t, e, "TestImageDecryption", assert, "Encrypted image layers have been decrypted").WithPod(pod).WithDeleteAssertion(&duration).Run()
 }
 
-func DoTestSealedSecret(t *testing.T, e env.Environment, assert CloudAssert, kbsEndpoint string, resourcePath, expectedSecret string) {
+func DoTestSealedSecret(t *testing.T, e env.Environment, assert CloudAssert, kbsEndpoint string, expectedSecret string) {
 	key := "MY_SECRET"
-	value := CreateSealedSecretValue("kbs:///" + resourcePath)
 	podName := "sealed-secret"
 	imageName := getBusyboxTestImage(t)
-	env := []v1.EnvVar{{Name: key, Value: value}}
+	env := []v1.EnvVar{{Name: key, Value: PreCreatedSecret}}
 	cmd := []string{"watch", "-n", "120", "-t", "--", "printenv MY_SECRET"}
 
 	pod := NewPod(E2eNamespace, podName, podName, imageName, WithEnvironmentVariables(env), WithInitdata(kbsEndpoint), WithCommand(cmd))

@@ -153,8 +153,13 @@ func TestLibvirtSealedSecret(t *testing.T) {
 	}
 
 	testSecret := envconf.RandomName("coco-pp-e2e-secret", 25)
-	resourcePath := "caa/workload_key/test_key.bin"
-	err := keyBrokerService.SetSecret(resourcePath, []byte(testSecret))
+	// The signing public key of the sealed secret
+	err := keyBrokerService.SetSecret(SealedSecretSigningKeyID, []byte(SealedSecretSigningJWKPublicKey))
+	if err != nil {
+		t.Fatalf("Set signing key Secret failed with: %v", err)
+	}
+	// The pre-created secret is hard-coded to this path
+	err = keyBrokerService.SetSecret(PreCreatedSecretResourcePath, []byte(testSecret))
 	if err != nil {
 		t.Fatalf("SetSecret failed with: %v", err)
 	}
@@ -167,7 +172,7 @@ func TestLibvirtSealedSecret(t *testing.T) {
 		t.Fatalf("GetCachedKbsEndpoint failed with: %v", err)
 	}
 	assert := getLibvirtAssert(t)
-	DoTestSealedSecret(t, testEnv, assert, kbsEndpoint, resourcePath, testSecret)
+	DoTestSealedSecret(t, testEnv, assert, kbsEndpoint, testSecret)
 }
 
 func TestLibvirtKbsKeyRelease(t *testing.T) {
