@@ -32,7 +32,9 @@ The flow of releases should roughly be:
         go mod tidy
         ```
         in the [cloud-api-adaptor](../src/cloud-api-adaptor/) directory and [csi-wrapper](../src/csi-wrapper/) directory.
-    - Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml) to the Kata release version.
+    - Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml)
+    to the Kata release version and then run `helm dependency update src/cloud-api-adaptor/install/charts/peerpods/`
+     to update [`Chart.lock`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.lock)
 
 1. cloud-api-adaptor releases with the following phases detailed below:
     - Cutting the release
@@ -119,7 +121,7 @@ confidential-containers release team to let them know it has completed successfu
 
 If the `main` branch was not already unlocked, then ask an admin to do this now.
 
-Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml)  should be reverted to use the `0.0.0-dev` tag.
+Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml)  should be reverted to use the `0.0.0-dev` tag, along with the `Chart.lock` getting removed.
 
 Revert `image.tag` back to `"latest"` in
 [`values.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/values.yaml),
