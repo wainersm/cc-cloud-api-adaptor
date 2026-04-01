@@ -80,6 +80,7 @@ jobs:
       packages: write # Required to publish the oras package to ghcr
       id-token: write # Required to publish the attestation provenance to ghcr
       attestations: write # Required to publish the attestation provenance to ghcr
+      artifact-metadata: write # Required by actions/attest to write attestation metadata
     outputs:
       qcow2_oras_image: ${{ steps.publish_oras_qcow2.outputs.image }}:${{ steps.publish_oras_qcow2.outputs.tag }}
       docker_oci_image: ${{ steps.build_docker_oci.outputs.image }}
