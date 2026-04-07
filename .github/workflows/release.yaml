@@ -120,3 +120,4 @@ jobs:
       packages: write      # Required for pushing to GitHub Container Registry
       id-token: write      # Required for attestation signing
       attestations: write  # Required for persisting attestations
+      artifact-metadata: write  # Required by actions/attest
