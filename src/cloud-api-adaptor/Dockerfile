@@ -1,6 +1,6 @@
 ARG BUILD_TYPE=dev
-# quay.io/confidential-containers/golang-fedora:1.25.8-41
-ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora@sha256:ae334af8ec5e0832bfa71237f3b52fdb08077184c658962ecf91de95e952d7df
+# quay.io/confidential-containers/golang-fedora:1.25.9-41
+ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora@sha256:ee140c59abb205d6385ef89fb0dfc5352f480435b1b58a7fa9941492904dcc07
 # registry.fedoraproject.org/fedora:41
 ARG BASE=registry.fedoraproject.org/fedora@sha256:893f7eeffce8e3e2bb2bc62786ba5603fb1e0bd6ba07091acb892266b95bafdf
 
