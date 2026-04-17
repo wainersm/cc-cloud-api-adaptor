@@ -1132,6 +1132,8 @@ func NewAwsInstallChart(installDir, provider string) (pv.InstallChart, error) {
 	}, nil
 }
 
+func (a *AwsInstallChart) GetHelm() *pv.Helm { return a.Helm }
+
 func (a *AwsInstallChart) Install(ctx context.Context, cfg *envconf.Config) error {
 	return a.Helm.Install(ctx, cfg)
 }
