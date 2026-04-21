@@ -173,10 +173,10 @@ endif
 PHONY: image-container
 image-container:
 	@echo "Building podvm container image..."
-	docker buildx build \
+	cd .. && docker buildx build \
 		-t $(PODVM_CONTAINER_NAME):$(PODVM_TAG) \
 		-t $(PODVM_CONTAINER_NAME):latest \
-		-f Dockerfile.podvm_docker_provider$(if $(filter $(PODVM_DISTRO),ubuntu),.ubuntu,) .
+		-f podvm-mkosi/Dockerfile.podvm_docker_provider$(if $(filter $(PODVM_DISTRO),ubuntu),.ubuntu,) .
 
 PHONY: push-image
 push-image:

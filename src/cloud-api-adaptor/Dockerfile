@@ -12,6 +12,7 @@ ARG BASE=registry.fedoraproject.org/fedora@sha256:893f7eeffce8e3e2bb2bc62786ba56
 FROM --platform=$BUILDPLATFORM $BUILDER_BASE AS builder-release
 ARG YQ_VERSION
 RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
+RUN dnf install -y git && dnf clean all
 
 # For `dev` builds due to CGO constraints we have to emulate the target platform
 # instead of using Go's cross-compilation
@@ -43,20 +44,21 @@ FROM builder-release AS iptables
 
 ARG TARGETARCH
 
-WORKDIR /iptables
-RUN --mount=type=bind,target=/versions.yaml,source=cloud-api-adaptor/versions.yaml,readonly \
-    version=$(yq -r .tools.iptables-wrapper /versions.yaml) && \
-    GOARCH=$TARGETARCH go install "github.com/kubernetes-sigs/iptables-wrappers@$version" && \
-    shopt -s globstar && \
-    cp /go/bin/**/iptables-wrappers ./iptables-wrapper && \
-    curl -L -o iptables-wrapper-installer.sh "https://raw.githubusercontent.com/kubernetes-sigs/iptables-wrappers/${version#v*-*-}/iptables-wrapper-installer.sh" && \
-    chmod 755 iptables-wrapper-installer.sh
+COPY cloud-api-adaptor/versions.yaml /versions.yaml
+
+RUN echo "Building iptables-wrapper... " \
+    && git clone https://github.com/kubernetes-sigs/iptables-wrappers.git /iptables \
+    && cd /iptables \
+    && version=$(grep 'iptables-wrapper:' /versions.yaml | awk '{print $2}') \
+    && git checkout $version \
+    && GOARCH=$TARGETARCH make BIN_DIR=. build
 
 FROM --platform=$TARGETPLATFORM $BASE AS base-release
 
 RUN dnf install -y iptables iptables-legacy iptables-nft nftables && dnf clean all
 RUN --mount=type=cache,target=/iptables,from=iptables,source=/iptables,readonly \
-    cd /iptables && ./iptables-wrapper-installer.sh --no-sanity-check --no-cleanup
+    cp /iptables/iptables-wrapper /usr/sbin \
+    && /usr/sbin/iptables-wrapper install
 
 FROM base-release AS base-dev
 RUN dnf install -y libvirt-libs /usr/bin/ssh && dnf clean all
