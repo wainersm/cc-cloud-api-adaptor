@@ -187,28 +187,17 @@ jobs:
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.pull_request.labels.*.name, 'test_e2e_aws')
-    needs: [podvm, image]
-    strategy:
-      fail-fast: false
-      matrix:
-        container_runtime:
-          - crio
-        os:
-          - ubuntu
-        provider:
-          - generic
-        arch:
-          - amd64
+    needs: [podvm_ubuntu_amd64, image]
     permissions:
       id-token: write # Required by aws-actions/configure-aws-credentials
       contents: read  # Required by aws-actions/configure-aws-credentials
     uses: ./.github/workflows/e2e_aws.yaml
     with:
       caa_image: ${{ inputs.registry }}/cloud-api-adaptor:${{ inputs.caa_image_tag }}
-      container_runtime: ${{ matrix.container_runtime }}
-      podvm_image: ${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:${{ inputs.podvm_image_tag }}
+      container_runtime: crio
+      podvm_image: ${{ needs.podvm_ubuntu_amd64.outputs.qcow2_oras_image }}
       git_ref: ${{ inputs.git_ref }}
-      oras: false
+      oras: true
     secrets:
       AWS_IAM_ROLE_ARN: ${{ secrets.AWS_IAM_ROLE_ARN }}
 
