@@ -154,14 +154,14 @@ jobs:
           VERIFY_PROVENANCE: yes
 
       - name: Build mkosi debug image
-        if: ${{ inputs.debug == 'true' }}
+        if: ${{ inputs.debug == true }}
         working-directory: src/cloud-api-adaptor/podvm-mkosi
         run: make image-debug
         env:
           PODVM_DISTRO: ubuntu
 
       - name: Build mkosi image
-        if: ${{ inputs.debug != 'true' }}
+        if: ${{ inputs.debug == false }}
         working-directory: src/cloud-api-adaptor/podvm-mkosi
         run: make image
         env:
@@ -195,7 +195,7 @@ jobs:
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
         env:
           ARCH: ${{ inputs.arch }}
-          DEBUG: ${{ inputs.debug }}
+          DEBUG: ${{ inputs.debug == true && 'true' || 'false' }}
           IMAGE_TAG: ${{ inputs.image_tag }}
           REGISTRY: ${{ inputs.registry }}
 
