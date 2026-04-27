@@ -160,8 +160,8 @@ jobs:
       registry: ${{ inputs.registry }}
       dev_arches: 'linux/amd64'
       release_arches: 'linux/amd64'
-      dev_tags: ${{ inputs.caa_image_tag }}-dev-amd64
-      release_tags: ${{ inputs.caa_image_tag }}-amd64
+      dev_tags: ${{ inputs.caa_image_tag }}-dev
+      release_tags: ${{ inputs.caa_image_tag }}
       git_ref: ${{ inputs.git_ref }}
     permissions:
       contents: read
@@ -175,8 +175,8 @@ jobs:
       registry: ${{ inputs.registry }}
       dev_arches: 'linux/s390x'
       release_arches: 'linux/s390x'
-      dev_tags: ${{ inputs.caa_image_tag }}-dev-s390x
-      release_tags: ${{ inputs.caa_image_tag }}-s390x
+      dev_tags: ${{ inputs.caa_image_tag }}-dev
+      release_tags: ${{ inputs.caa_image_tag }}
       git_ref: ${{ inputs.git_ref }}
       runner: 'ubuntu-24.04-s390x'
     permissions:
