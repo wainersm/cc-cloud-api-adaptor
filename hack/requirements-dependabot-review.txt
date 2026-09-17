@@ -1,0 +1,9 @@
+langchain-core>=0.3,<1.0
+langchain-anthropic>=0.3,<1.0
+langchain-openai>=0.3,<1.0
+pyyaml>=6.0
+
+# Optional: only needed for --provider vertex (Claude on Google Cloud Vertex
+# AI). Uses the anthropic SDK's AnthropicVertex client (pulled in by
+# langchain-anthropic) plus Application Default Credentials.
+# google-auth>=2.0
