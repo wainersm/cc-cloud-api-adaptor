@@ -583,8 +583,8 @@ const (
 	defaultSignedImage                = "ghcr.io/confidential-containers/test-container-image-rs:cosign-signed"
 	defaultSignedImageRegistry        = "ghcr.io/confidential-containers/test-container-image-rs"
 	defaultSignedImageCosignPublicKey = `-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwQEjdCiL3ILUf07NDkDVhgKCj1C6
-BsCfmM/zt1kNSj0/+nAqA+25XfyClYq2lJFJ6TkgCsf57cTCkXYDz9c+Yg==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWT07eR1HNK3D2iqHotE0c389aSTh
+Lj0B39PXTBcJzJpkXPO82lLGQdc47V5HPWaPZ2Fc3DWyRoz1oWbnLlvQ5Q==
 -----END PUBLIC KEY-----`
 )
 
