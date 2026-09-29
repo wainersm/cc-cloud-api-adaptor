@@ -580,11 +580,11 @@ const (
 	// cosign public key it is signed with. These differ between upstream and
 	// downstream, so they are overridable via SIGNED_IMAGE, SIGNED_IMAGE_REGISTRY
 	// and SIGNED_IMAGE_COSIGN_PUBKEY.
-	defaultSignedImage                = "quay.io/confidential-devhub/signed/fraud-detection@sha256:f93a4e266b4466f5a1d49c26d25cc181c59ee7487ad985a706f1a858aae4c620"
-	defaultSignedImageRegistry        = "quay.io/confidential-devhub/signed/fraud-detection"
+	defaultSignedImage                = "ghcr.io/confidential-containers/test-container-image-rs:cosign-signed"
+	defaultSignedImageRegistry        = "ghcr.io/confidential-containers/test-container-image-rs"
 	defaultSignedImageCosignPublicKey = `-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETu9VYQKSSp5u58gJGCdgFWcF73PX
-Q/k24PGr91SNwY8/70pkIfn7hRHup13WXEmEUaKHcpn83uNobzMfvHlu2Q==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwQEjdCiL3ILUf07NDkDVhgKCj1C6
+BsCfmM/zt1kNSj0/+nAqA+25XfyClYq2lJFJ6TkgCsf57cTCkXYDz9c+Yg==
 -----END PUBLIC KEY-----`
 )
 
